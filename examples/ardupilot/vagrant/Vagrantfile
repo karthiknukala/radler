@@ -42,7 +42,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # removing this line causes "A box must be specified." error
   # and this is the default box that will be booted if no name is specified
-  config.vm.box = "ubuntu/focal64"
+  config.vm.box = "ubuntu/noble64"
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
 
   # LTS, EOL April, 2019:
@@ -158,16 +158,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #    eoan.vm.boot_timeout = 1200
 #  end
 
-  # 20.04 LTS
-  config.vm.define "focal", primary: true do |focal|
-    focal.vm.box = "ubuntu/focal64"
-    focal.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
-    focal.vm.provider "virtualbox" do |vb|
-      vb.name = "DesCert Phase2 ArduPilot (focal)"
+  # 24.04 LTS
+  config.vm.define "noble", primary: true do |noble|
+    noble.vm.box = "ubuntu/noble64"
+    noble.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
+    noble.vm.provider "virtualbox" do |vb|
+      vb.name = "DesCert Phase2 ArduPilot (noble)"
     end
-    focal.vm.boot_timeout = 1200
+    noble.vm.boot_timeout = 1200
 
-    focal.vm.provision "shell", inline: <<-SHELL, privileged: false
+    noble.vm.provision "shell", inline: <<-SHELL, privileged: false
       sudo apt update 
       sudo apt install -y locales
       sudo locale-gen en_US en_US.UTF-8
@@ -182,15 +182,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
       sudo sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list'
       sudo apt update 
-      sudo apt install -y ros-foxy-desktop
-      sudo apt install -y ros-foxy-mavros
-      sudo apt install -y ros-foxy-rqt ros-foxy-rqt-common-plugins 
+      sudo apt install -y ros-jazzy-desktop
+      sudo apt install -y ros-jazzy-mavros
+      sudo apt install -y ros-jazzy-rqt ros-jazzy-rqt-common-plugins 
       sudo apt install -y mesa-utils libgl1-mesa-glx
       wget https://raw.githubusercontent.com/mavlink/mavros/ros2/mavros/scripts/install_geographiclib_datasets.sh -O ~/install_geographiclib_datasets.sh
       chmod a+x ~/install_geographiclib_datasets.sh
       sudo ~/install_geographiclib_datasets.sh
-      (echo ; echo "# Setup for ROS2" ; echo "source /opt/ros/foxy/setup.bash") >> ~/.bashrc
-      (echo ; echo "# Setup for ROS2" ; echo "source /opt/ros/foxy/setup.bash") >> ~/.profile
+      (echo ; echo "# Setup for ROS2" ; echo "source /opt/ros/jazzy/setup.bash") >> ~/.bashrc
+      (echo ; echo "# Setup for ROS2" ; echo "source /opt/ros/jazzy/setup.bash") >> ~/.profile
       source ~/.profile
 
       #timesynch
@@ -224,18 +224,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       #sros2
       sudo apt install -y libssl-dev
 
-      pip3 install tarjan pyyaml pydot
+      pip3 install --break-system-packages tarjan pyyaml pydot
       sudo add-apt-repository ppa:deadsnakes/ppa
-      sudo apt install -y python3.6
-      sudo apt install -y python3.6-distutils
-      python3.6 -m pip install tarjan
+      sudo apt install -y python3.14 python3.14-venv python3.14-dev
+      sudo apt install -y python3.14-distutils || true
+      python3.14 -m pip install --break-system-packages tarjan
       cd ~
       git clone https://github.com/SRI-CSL/radler.git
       cd radler
       git submodule update --init --recursive
       git checkout ros2
-      sudo mv /opt/ros/foxy/share/mavros/launch /opt/ros/foxy/share/mavros/launch.bak
-      sudo cp -r examples/ardupilot/launch /opt/ros/foxy/share/mavros
+      sudo mv /opt/ros/jazzy/share/mavros/launch /opt/ros/jazzy/share/mavros/launch.bak
+      sudo cp -r examples/ardupilot/launch /opt/ros/jazzy/share/mavros
       mkdir -p ~/ros2_ws/src
       ./radler.sh --ws_dir ~/ros2_ws/src compile examples/ardupilot/afs.radl --plant plant --ROS
       cd ~/ros2_ws

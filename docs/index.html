@@ -49,12 +49,12 @@
 <span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
 </pre></div>
 </div>
-<p>To get Radler working on a clean version of Ubuntu 20.04:</p>
+<p>To get Radler working on a clean version of Ubuntu 24.04:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">cmake</span> <span class="n">python3</span><span class="o">-</span><span class="n">pip</span>
-<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="n">tarjan</span> <span class="n">pyyaml</span> <span class="n">pydot</span>
+<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="o">--</span><span class="n">break</span><span class="o">-</span><span class="n">system</span><span class="o">-</span><span class="n">packages</span> <span class="n">tarjan</span> <span class="n">pyyaml</span> <span class="n">pydot</span>
 </pre></div>
 </div>
-<p>To install ROS2 Foxy, follow the instructions from <a class="reference external" href="https://docs.ros.org/en/foxy/Installation.html">https://docs.ros.org/en/foxy/Installation.html</a></p>
+<p>To install ROS2 Jazzy, follow the instructions from <a class="reference external" href="https://docs.ros.org/en/jazzy/Installation.html">https://docs.ros.org/en/jazzy/Installation.html</a></p>
 <p>To install colcon, follow the instructions from <a class="reference external" href="https://colcon.readthedocs.io/en/released/user/installation.html">https://colcon.readthedocs.io/en/released/user/installation.html</a></p>
 <p>Sample Vagrantfile is available from <a class="reference external" href="https://github.com/SRI-CSL/radler/blob/ros2/examples/ardupilot/vagrant/Vagrantfile">https://github.com/SRI-CSL/radler/blob/ros2/examples/ardupilot/vagrant/Vagrantfile</a></p>
 </section>
@@ -99,7 +99,7 @@
 </div>
 <p>You should see the output of the two nodes explaining that they are communicating. For more details see <cite>pubsub</cite> example documentation.</p>
 <p>You can stop everything by typing Ctrl-C.</p>
-<p>To try SROS2 (<a class="reference external" href="https://github.com/ros2/sros2/blob/foxy/SROS2_Linux.md">https://github.com/ros2/sros2/blob/foxy/SROS2_Linux.md</a>), start a container for both talker and listener nodes:</p>
+<p>To try SROS2 (<a class="reference external" href="https://github.com/ros2/sros2/blob/jazzy/SROS2_Linux.md">https://github.com/ros2/sros2/blob/jazzy/SROS2_Linux.md</a>), start a container for both talker and listener nodes:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">--</span><span class="n">env</span><span class="o">-</span><span class="n">file</span> <span class="n">sros_env</span><span class="o">.</span><span class="n">list</span> <span class="o">--</span><span class="n">rm</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span><span class="n">t</span> <span class="n">radler</span><span class="o">/</span><span class="n">ros2</span><span class="p">:</span><span class="n">latest</span> <span class="n">bash</span>
 <span class="n">docker</span> <span class="n">ps</span>                               <span class="c1"># to retrieve the CONTAINER_ID</span>
 <span class="n">docker</span> <span class="n">exec</span> <span class="o">-</span><span class="n">it</span> <span class="n">CONTAINER_ID</span> <span class="n">bash</span>       <span class="c1"># to get into the container&#39;s shell</span>
@@ -920,9 +920,9 @@ the default IP address.</p>
 </div>
 <p>Install TensorFlow and related packages. For details, refer <a class="reference external" href="https://www.tensorflow.org/install/install_linux">https://www.tensorflow.org/install/install_linux</a>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">python3</span><span class="o">-</span><span class="n">pip</span>
-<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="o">-</span><span class="n">U</span> <span class="n">pip</span>
-<span class="n">sudo</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">setuptools</span>
-<span class="n">sudo</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">target</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python2</span><span class="mf">.7</span><span class="o">/</span><span class="n">dist</span><span class="o">-</span><span class="n">packages</span> <span class="n">tensorflow</span>
+<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="o">--</span><span class="n">break</span><span class="o">-</span><span class="n">system</span><span class="o">-</span><span class="n">packages</span> <span class="o">-</span><span class="n">U</span> <span class="n">pip</span>
+<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="o">--</span><span class="n">break</span><span class="o">-</span><span class="n">system</span><span class="o">-</span><span class="n">packages</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">setuptools</span>
+<span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="o">--</span><span class="n">break</span><span class="o">-</span><span class="n">system</span><span class="o">-</span><span class="n">packages</span> <span class="n">tensorflow</span>
 <span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">--</span><span class="n">fix</span><span class="o">-</span><span class="n">missing</span> <span class="n">python</span><span class="o">-</span><span class="n">matplotlib</span>
 </pre></div>
 </div>
@@ -1042,19 +1042,19 @@ subscribes to it to turn on the led light when the button is pressed.</div>
 </section>
 <section id="installing-radler-on-raspberry-pi">
 <h3>Installing Radler on Raspberry Pi<a class="headerlink" href="#installing-radler-on-raspberry-pi" title="Link to this heading">¶</a></h3>
-<p>Install Python 3.4 on the Raspberry Pi.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>sudo apt-get install libncurses5-dev libncursesw5-dev libreadline6-dev
-tar -zxf /path/to/your/Python-3.4.3.tgz
-cd Python-3.4.3
-./configure --prefix=/usr/local/opt/python-3.4.3
+<p>Install Python 3.14 on the Raspberry Pi.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>sudo apt-get install libncurses5-dev libncursesw5-dev libreadline-dev
+tar -zxf /path/to/your/Python-3.14.0.tgz
+cd Python-3.14.0
+./configure --prefix=/usr/local/opt/python-3.14.0
 make
 sudo make install
-export PATH=$PATH:/usr/local/opt/python-3.4.3/bin
+export PATH=$PATH:/usr/local/opt/python-3.14.0/bin
 </pre></div>
 </div>
 <p>Install tarjan and pyyaml on the Raspberry Pi.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">pip3</span><span class="mf">.4</span> <span class="n">install</span> <span class="n">tarjan</span>
-<span class="n">sudo</span> <span class="n">pip3</span><span class="mf">.4</span> <span class="n">install</span> <span class="n">pyyaml</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">pip3</span><span class="mf">.14</span> <span class="n">install</span> <span class="n">tarjan</span>
+<span class="n">sudo</span> <span class="n">pip3</span><span class="mf">.14</span> <span class="n">install</span> <span class="n">pyyaml</span>
 </pre></div>
 </div>
 <p>Install ROS Indigo on the Raspberry Pi.</p>
@@ -1064,15 +1064,15 @@ export PATH=$PATH:/usr/local/opt/python-3.4.3/bin
 <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">init</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">dphys</span><span class="o">-</span><span class="n">swapfile</span> <span class="n">start</span>
 </pre></div>
 </div>
-<p>CMake 2.8.12 or higher is required on the Raspberry Pi.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">cmake</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">v3</span><span class="mf">.2</span><span class="o">/</span><span class="n">cmake</span><span class="o">-</span><span class="mf">3.2.2</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-<span class="n">tar</span> <span class="n">xf</span> <span class="n">cmake</span><span class="o">-</span><span class="mf">3.2.2</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-<span class="n">cd</span> <span class="n">cmake</span><span class="o">-</span><span class="mf">3.2.2</span>
+<p>CMake 3.30 or higher is required on the Raspberry Pi.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">cmake</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">v3</span><span class="mf">.30</span><span class="o">/</span><span class="n">cmake</span><span class="o">-</span><span class="mf">3.30.5</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">tar</span> <span class="n">xf</span> <span class="n">cmake</span><span class="o">-</span><span class="mf">3.30.5</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">cd</span> <span class="n">cmake</span><span class="o">-</span><span class="mf">3.30.5</span>
 <span class="o">./</span><span class="n">configure</span>
 <span class="n">make</span>
 <span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">checkinstall</span>
 <span class="n">sudo</span> <span class="n">checkinstall</span>
-<span class="n">dpkg</span> <span class="o">-</span><span class="n">i</span> <span class="o">~/</span><span class="n">cmake</span><span class="o">-</span><span class="mf">3.2.2</span><span class="o">/</span><span class="n">cmake_3</span><span class="mf">.2.2</span><span class="o">-</span><span class="mi">1</span><span class="n">_armhf</span><span class="o">.</span><span class="n">deb</span>
+<span class="n">dpkg</span> <span class="o">-</span><span class="n">i</span> <span class="o">~/</span><span class="n">cmake</span><span class="o">-</span><span class="mf">3.30.5</span><span class="o">/</span><span class="n">cmake_3</span><span class="mf">.30.5</span><span class="o">-</span><span class="mi">1</span><span class="n">_armhf</span><span class="o">.</span><span class="n">deb</span>
 </pre></div>
 </div>
 </section>

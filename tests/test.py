@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3.14
 # This file is part of Radler.
 #
 # Radler is free software: you can redistribute it and/or modify

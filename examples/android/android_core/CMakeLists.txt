@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.30)
 project(android_core)
 
 find_package(catkin REQUIRED rosjava_build_tools)

@@ -57,9 +57,10 @@ def clear(d, templates):
 
 cmake_templates = {
 'cmakeliststxt': """
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.30)
 
-set(CMAKE_CXX_FLAGS "${{CMAKE_CXX_FLAGS}} -std=c++14")
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project({module})
 

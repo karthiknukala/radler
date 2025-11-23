@@ -53,28 +53,28 @@ We use GPIOClass from http://www.hertaville.com/introduction-to-accessing-the-ra
 Installing Radler on Raspberry Pi
 ---------------------------------
 
-Install Python 3.4 on the Raspberry Pi. 
+Install Python 3.14 on the Raspberry Pi. 
 
 :: 
 
-    sudo apt-get install libncurses5-dev libncursesw5-dev libreadline6-dev
-    tar -zxf /path/to/your/Python-3.4.3.tgz
-    cd Python-3.4.3
-    ./configure --prefix=/usr/local/opt/python-3.4.3
+    sudo apt-get install libncurses5-dev libncursesw5-dev libreadline-dev
+    tar -zxf /path/to/your/Python-3.14.0.tgz
+    cd Python-3.14.0
+    ./configure --prefix=/usr/local/opt/python-3.14.0
     make
     sudo make install
-    export PATH=$PATH:/usr/local/opt/python-3.4.3/bin 
+    export PATH=$PATH:/usr/local/opt/python-3.14.0/bin 
 
 Install tarjan and pyyaml on the Raspberry Pi.  
 
 :: 
 
-    sudo pip3.4 install tarjan 
-    sudo pip3.4 install pyyaml 
+    sudo pip3.14 install tarjan 
+    sudo pip3.14 install pyyaml 
 
-Install ROS Indigo on the Raspberry Pi. 
+Install ROS2 Jazzy on the Raspberry Pi. 
 
-Follow the instructions in Step 2 at http://wiki.ros.org/ROSberryPi.
+Follow the instructions at https://docs.ros.org/en/jazzy/Installation.html
 
 We recommend increasing the swapfile size of Raspberry Pi to 800MBytes (default is 100MBytes) by editing *CONF_SWAPSIZE* in */etc/dphys-swapfile*, and restart dphys-swapfile. 
 
@@ -83,18 +83,18 @@ We recommend increasing the swapfile size of Raspberry Pi to 800MBytes (default 
     /etc/init.d/dphys-swapfile stop
     /etc/init.d/dphys-swapfile start 
 
-CMake 2.8.12 or higher is required on the Raspberry Pi.
+CMake 3.30 or higher is required on the Raspberry Pi.
 
 :: 
 
-    wget http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz
-    tar xf cmake-3.2.2.tar.gz
-    cd cmake-3.2.2
+    wget https://cmake.org/files/v3.30/cmake-3.30.5.tar.gz
+    tar xf cmake-3.30.5.tar.gz
+    cd cmake-3.30.5
     ./configure
     make
     sudo apt-get install checkinstall
     sudo checkinstall
-    dpkg -i ~/cmake-3.2.2/cmake_3.2.2-1_armhf.deb 
+    dpkg -i ~/cmake-3.30.5/cmake_3.30.5-1_armhf.deb 
 
 Run the demo on Raspberry Pi
 ----------------------------
@@ -116,12 +116,12 @@ Run the raspberrypi example.
 
 ::
 
-    mkdir -p /tmp/catkin_ws/src
+    mkdir -p /tmp/ros2_ws/src
     cd /path/to/radler 
-    ./radler.sh --ws_dir /tmp/catkin_ws/src compile examples/raspberrypi/raspberrypi.radl --plant plant --ROS 
-    cd /tmp/catkin_ws 
-    catkin_make 
-    cd /tmp/catkin_ws/devel/lib/raspberrypi
+    ./radler.sh --ws_dir /tmp/ros2_ws/src compile examples/raspberrypi/raspberrypi.radl --plant plant --ROS 
+    cd /tmp/ros2_ws 
+    colcon build 
+    cd /tmp/ros2_ws/install/raspberrypi/lib/raspberrypi
     sudo chown -v root.root led 
     sudo chmod 4755 led 
     ./led

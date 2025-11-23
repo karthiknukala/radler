@@ -1,5 +1,5 @@
 python_lib : cmake_library {
-    PATH "/usr/share/cmake-2.8/Modules"
+    PATH "/usr/share/cmake-3.30/Modules"
     CMAKE_MODULE "PythonLibs"
     CMAKE_VAR_LIBRARIES "PYTHON_LIBRARIES"
     CMAKE_VAR_INCLUDE_DIRS "PYTHON_INCLUDE_DIRS"

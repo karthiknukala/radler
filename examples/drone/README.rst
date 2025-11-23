@@ -114,19 +114,19 @@ https://github.com/AutonomyLab/ardrone\_autonomy.git.
 
 ::
 
-    sudo apt-get install ros-indigo-ardrone-autonomy 
-    sudo apt-get install ros-indigo-image-view
+    sudo apt-get install ros-jazzy-ardrone-autonomy 
+    sudo apt-get install ros-jazzy-image-view
 
 .. raw:: html
 
     <!--
-    cd ~/catkin_ws/src
-    git clone https://github.com/AutonomyLab/ardrone_autonomy.git -b indigo-devel
-    cd ~/catkin_ws
+    cd ~/ros2_ws/src
+    git clone https://github.com/AutonomyLab/ardrone_autonomy.git
+    cd ~/ros2_ws
     rosdep install --from-paths src -i 
-    catkin_make 
+    colcon build 
 
-    catkin_make install 
+    colcon build --install 
     source devel/setup.bash 
     export CPLUS_INCLUDE_PATH=~/catkin_ws/devel/include
     -->

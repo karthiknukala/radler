@@ -8,9 +8,9 @@ In case of mac, use port to install instead of pip.
 
 ::
 
-    sudo port install py39-sphinx
-    sudo port select --set python python39
-    sudo port select --set sphinx py39-sphinx
+    sudo port install py314-sphinx
+    sudo port select --set python python314
+    sudo port select --set sphinx py314-sphinx
 
 Generate target files using Sphinx. 
 
