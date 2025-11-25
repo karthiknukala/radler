@@ -29,9 +29,10 @@ from pathlib import Path
 from radler.astutils.tools import write_file, listjoin, relative_path
 from radler.radlr import infos
 from radler.radlr.gen_utils import qn
-from radler.radlr.gen_utils.user_sources import    gather_node_user_file
+from radler.radlr.gen_utils.user_sources import gather_node_user_file, node_sources_type
 from radler.radlr.rast import AstVisitor, follow_links
 from radler.radlr.ros.rosnode import gennode
+from radler.radlr.ros.rosnodepy import gennode_python
 
 import re
 
@@ -170,6 +171,15 @@ def _from_node(visitor, node, d):
     d['node_user_init_fun'] = qn.c_user_init(node)
     d['node_user_finish_fun'] = qn.c_user_finish(node)
 
+    # Check if this is a Python node
+    source_type = node_sources_type(node)
+    if source_type == 'PYTHON':
+        # Generate Python node (no CMake compilation needed)
+        node_py_path = gennode_python(node)
+        # Python nodes don't need CMake build rules, so we skip the rest
+        return
+    
+    # For C/C++ nodes, proceed with normal code generation
     node_h_path, node_cpp_path = gennode(node)
     d['node_h_filename'] = node_h_path.name
     d['node_sources'] = str(relative_path(node_cpp_path, d['_localroot']))

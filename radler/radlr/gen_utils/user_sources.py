@@ -77,17 +77,22 @@ def collect_user_files(node_list, src_path=user_src_path):
 
 
 def node_sources_type(node):
-    """ Return the kind of source of node ('C' or 'CXX'). """
+    """ Return the kind of source of node ('C', 'CXX', or 'PYTHON'). """
     is_cxx = node['CXX'] != None
     is_c = node['C'] != None
-    if is_cxx:
-        if is_c:
-            error("A node can't have a C and a CXX field.", node._location)
+    is_python = node['PYTHON'] != None
+    
+    count = sum([is_cxx, is_c, is_python])
+    if count > 1:
+        error("A node can only have one of C, CXX, or PYTHON field.", node._location)
+    elif is_cxx:
         return 'CXX'
     elif is_c:
         return 'C'
+    elif is_python:
+        return 'PYTHON'
     else:
-        error("A node is required to have a C or CXX field.")
+        error("A node is required to have a C, CXX, or PYTHON field.")
 
 def source_node(node):
     """ Return the source field ('C' or 'CXX') of node. """
@@ -122,9 +127,10 @@ def gather_user_header_paths(node, src_path=user_src_path):
 
 
 def user_node_class(node, state_var, in_var, in_f_var, out_var, out_f_var):
-    """ The node is searched for a C or CXX class defining the step machine.
+    """ The node is searched for a C, CXX, or PYTHON class defining the step machine.
     This returns the instructions to initialize the state_var, the
     expression call to do a step and the instructions to finalize the state_var.
+    For Python nodes, this returns None (as Python nodes are generated differently).
     """
     source_type = node_sources_type(node)
     source = node[source_type]
@@ -155,6 +161,9 @@ def user_node_class(node, state_var, in_var, in_f_var, out_var, out_f_var):
                     i = in_var, i_f = in_f_var,
                     o = out_var, o_f = out_f_var)
         finish = ""
+    elif source_type == 'PYTHON':
+        # Python nodes are generated separately, return None
+        return None, None, None
     else:
         internal_error("Node with unknown source type.\n"+str(node._location))
 

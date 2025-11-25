@@ -117,6 +117,12 @@ class cxx_file
     FILENAME string *
     LIB cmake_library/static_library *
 
+class python_class
+    PATH string ?
+    FILENAME string
+    MODULE string
+    CLASS string
+    STEP_METHOD string ?
 
 class c_class
     PATH string ?
@@ -183,6 +189,7 @@ class node
     SUBSCRIBES subscription *
     CXX cxx_class ?
     C c_class ?
+    PYTHON python_class ?
     PERIOD duration
     WCET duration ?
     DEVICES device_interface *
