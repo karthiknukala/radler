@@ -16,4 +16,4 @@
 
 SCRIPT_DIR=`dirname $(python3 -c "import os, sys; print(os.path.realpath(\"$0\"))")`
 
-PYTHONPATH="$SCRIPT_DIR/external_libs/parsimonious:$SCRIPT_DIR/external_libs/pydot:$SCRIPT_DIR" python3.14 $SCRIPT_DIR/radler/main.py "$@"
+PYTHONPATH="$SCRIPT_DIR/external_libs/parsimonious:$SCRIPT_DIR/external_libs/pydot:$SCRIPT_DIR" python3 $SCRIPT_DIR/radler/main.py "$@"
