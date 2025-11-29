@@ -146,11 +146,10 @@ target_compile_definitions({node_target}
   PRIVATE RADL_FINISH_FUN={node_user_finish_fun}
 )
 target_compile_features({node_target} PUBLIC cxx_decltype_auto)
+rosidl_get_typesupport_target(cpp_typesupport_target_{node_target} {module} "rosidl_typesupport_cpp")
 target_link_libraries({node_target}
-  {target_link_libs} {node_libs}
+  {target_link_libs} {node_libs} ${{cpp_typesupport_target_{node_target}}}
 )
-rosidl_target_interfaces({node_target}
-      {module} "rosidl_typesupport_cpp")
 
 ament_target_dependencies({node_target} {ament_target_dep})
 """

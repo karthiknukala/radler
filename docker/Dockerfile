@@ -87,7 +87,8 @@ RUN pip3 install --break-system-packages tarjan pyyaml pydot parsimonious
 RUN apt-get install -y default-jdk
 
 RUN cd ~ ; git clone https://github.com/karthiknukala/radler.git
-RUN cd ~/radler ; git checkout modernizing ; git submodule update --init --recursive
+RUN cd ~/radler ; git checkout modernizing
+# Skip submodules - we use pip-installed parsimonious/pydot instead of vendored copies
 
 # setup ros2_ws 
 ENV ROS2_WS=/tmp/ros2_ws
