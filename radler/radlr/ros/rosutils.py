@@ -52,7 +52,7 @@ def msg_msg_file(package_folder, msg_name):
     return msg_folder(package_folder) / (msg_name + '.msg')
 
 def demangle(s):
-    pat = re.compile('^([A-Z])([a-zA-Z]+)(\d+)([A-Z])([a-zA-z]+)(\d+)([A-Z])([a-zA-Z]+)$', re.IGNORECASE)
+    pat = re.compile(r'^([A-Z])([a-zA-Z]+)(\d+)([A-Z])([a-zA-z]+)(\d+)([A-Z])([a-zA-Z]+)$', re.IGNORECASE)
     retval = None
     m =  pat.match(s)
     if m:

@@ -126,11 +126,11 @@ node_templates_cmake_sublevel = {
 'to_install':
 " {node_target}"
 ,
-'node_defs':"""
+'node_defs':r"""
 #get_target_property({node_user_src_var} {node_module_lib} radl_user_src)
 set({node_user_src_var} ${{CMAKE_CURRENT_SOURCE_DIR}}/../../{node_module_lib}/user_src)"""
 "{node_find_libs}"
-"""
+r"""
 add_executable({node_target} {node_sources})
 set_target_properties({node_target} PROPERTIES OUTPUT_NAME {node_name})
 target_include_directories({node_target} PUBLIC {node_dirs} PRIVATE {node_gen_folder})

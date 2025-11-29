@@ -46,10 +46,10 @@ def clear(d, templates):
 
 cmake_templates = {
 'cmakelists':
-"""
-cmake_minimum_required(VERSION 3.30)
+r"""
+cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project({package_name})
@@ -62,7 +62,7 @@ include_directories(
 {inc_dirs})
 """
 "{defs}"
-"""
+r"""
 {module_find_libs}
 add_library({ast} STATIC {ast_c_filename}{module_sources})
 target_include_directories({ast} 
