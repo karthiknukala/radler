@@ -28,7 +28,30 @@ from parsimonious.nodes import Node
 from radler.astutils.nodetrees import Functor
 
 
-nodetreesutils = Functor(Node, 'children', 'expr_name')
+# Monkey-patch Node to have a name property that handles anonymous nodes
+@property
+def _radler_name(self):
+    """Get the node name, falling back to expression type for anonymous nodes."""
+    name = self.expr_name
+    if name:
+        return name
+    # For anonymous nodes, use the expression type name with __ prefix
+    expr_type = type(self.expr).__name__
+    # Handle parsimonious 0.10+ where Optional/ZeroOrMore/OneOrMore are all Quantifier
+    if expr_type == 'Quantifier':
+        import math
+        if self.expr.max == 1:
+            return '__Optional__'
+        elif self.expr.min == 0:
+            return '__ZeroOrMore__'
+        else:
+            return '__OneOrMore__'
+    return f'__{expr_type}__'
+
+Node.radler_name = _radler_name
+
+
+nodetreesutils = Functor(Node, 'children', 'radler_name')
 ParseVisitor = nodetreesutils.Visitor
 spprint_node = nodetreesutils.spprint_node
 

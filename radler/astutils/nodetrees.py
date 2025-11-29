@@ -25,8 +25,7 @@ The central concept here is a node tree.
     Anything else is considered a leaf.
 
 '''
-from _collections_abc import Mapping
-from collections import Sequence
+from collections.abc import Mapping, Sequence
 from copy import copy
 from functools import partial
 
@@ -55,8 +54,7 @@ def mapred(f, l, acc, inplace=False):
     else:
         def _aux(it):
             nonlocal acc
-            while True:
-                v = next(it)
+            for v in it:
                 o, acc = f(v, acc)
                 yield o
         return l.__class__(_aux(iter(l))), acc

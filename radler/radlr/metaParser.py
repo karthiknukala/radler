@@ -65,7 +65,7 @@ meta_rules = (rule_syntax +
 class MetaParser:
     def __init__(self, meta_rules=meta_rules):
         #TODO: 99 automatically insert the _ and end rules, or have literals..
-        self.meta_grammar = Grammar(meta_rules, 'meta')
+        self.meta_grammar = Grammar(meta_rules)['meta']
     def __call__(self, text):
         """ Parse a text following the meta grammar.
         @return: a cleaned tree without '_' and 'end' rules.
