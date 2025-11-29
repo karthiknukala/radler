@@ -21,4 +21,15 @@ ros2 security create_keystore sros2_keys
 ros2 security create_key sros2_keys /talker_listener/talker
 ros2 security create_key sros2_keys /talker_listener/listener
 
-exec "$@"
+# Handle shortcut commands for talker/listener
+case "$1" in
+    talker)
+        exec ros2 run pubsub talker
+        ;;
+    listener)
+        exec ros2 run pubsub listener
+        ;;
+    *)
+        exec "$@"
+        ;;
+esac
