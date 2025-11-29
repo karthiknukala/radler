@@ -24,8 +24,8 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6
 RUN echo "deb http://packages.ros.org/ros2/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros2-latest.list
 
 # setup environment
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # install bootstrap tools
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 # install python packages
-RUN pip3 install -U \
+RUN pip3 install --break-system-packages -U \
     argcomplete \
     colcon-common-extensions \
     colcon-mixin \
@@ -83,24 +83,19 @@ RUN apt-get install -y --no-install-recommends vim-tiny
 # install radler packages
 RUN apt-get update -y
 RUN apt-get install -y cmake python3-pip python3-full
-RUN pip3 install --break-system-packages tarjan pyyaml pydot
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt install -y python3.14 python3.14-venv python3.14-dev
-RUN apt install -y python3.14-distutils || true
-RUN python3.14 -m pip install --break-system-packages tarjan
+RUN pip3 install --break-system-packages tarjan pyyaml pydot parsimonious
 RUN apt-get install -y default-jdk
 
-RUN cd ~ ; git clone https://github.com/SRI-CSL/radler.git
-RUN cd ~/radler ; git checkout ros2 ; git submodule update --init --recursive
+RUN cd ~ ; git clone https://github.com/karthiknukala/radler.git
+RUN cd ~/radler ; git checkout modernizing ; git submodule update --init --recursive
 
 # setup ros2_ws 
-ENV ROS2_WS /tmp/ros2_ws
+ENV ROS2_WS=/tmp/ros2_ws
 RUN mkdir -p $ROS2_WS/src
 
 # setup entrypoint
-ENV ROS2_DISTRO jazzy
-ENV ROS2_PREFIX /opt/ros
+ENV ROS2_DISTRO=jazzy
+ENV ROS2_PREFIX=/opt/ros
 WORKDIR $ROS2_WS
 
 COPY ./ros2_entrypoint.sh /
