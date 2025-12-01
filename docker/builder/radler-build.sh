@@ -146,7 +146,9 @@ eval $RADLER_CMD
 if [[ "$RUN_BUILD" == true ]]; then
     echo -e "${GREEN}Building with colcon...${NC}"
     cd "$OUTPUT_DIR"
-    colcon build --symlink-install
+    # Note: Don't use --symlink-install as it creates broken symlinks when
+    # the build output is used outside this container
+    colcon build
     
     echo -e "${GREEN}Build complete!${NC}"
     echo -e "To use the built packages, source the setup file:"
