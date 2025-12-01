@@ -1,0 +1,37 @@
+# Radler Docker Compose Template
+# This template is used by Radler to generate docker-compose.yml files.
+# The generator will populate the services section based on the plant definition.
+#
+# Variables:
+#   {{PACKAGE_NAME}}  - Name of the ROS package
+#   {{SERVICES}}      - Generated service definitions for each node
+
+version: '3.8'
+
+# Common settings for all Radler nodes
+x-radler-common: &radler-common
+  restart: unless-stopped
+  network_mode: host
+  environment:
+    - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+    - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+
+services:
+{{SERVICES}}
+
+# Example of what a generated service looks like:
+# 
+#   talker:
+#     <<: *radler-common
+#     build:
+#       context: ..
+#       dockerfile: docker/Dockerfile.talker
+#     container_name: {{PACKAGE_NAME}}_talker
+#
+#   listener:
+#     <<: *radler-common
+#     build:
+#       context: ..
+#       dockerfile: docker/Dockerfile.listener
+#     container_name: {{PACKAGE_NAME}}_listener
+

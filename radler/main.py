@@ -57,6 +57,7 @@ from radler.radlr.parser import Semantics
 from radler.radlr.plantgen import channels, plantcompute
 from radler.radlr.plantgen.dump import dump_formatters, dump_filters
 from radler.radlr.ros import rospackage, rosplant
+from radler.radlr.dockergen import dockergen
 from radler.radlr.workspace import ws_rospath
 
 
@@ -181,7 +182,8 @@ def load_pervasives(pervasives_dir=None, **_):
 
 def compile_source(ws_dir=None, no_pervasives=None, pervasives_dir=None,
                    radl_file=None, object_files=None, object_dest=None,
-                   plant=None, ROS=None, relative_links=None, **_):
+                   plant=None, ROS=None, docker=None, ros_distro=None,
+                   ros_domain_id=None, relative_links=None, **_):
     if not no_pervasives:
         #Ensure pervasives are correct
         #Beware that it calls compile_source and thus change modify infos,
@@ -272,6 +274,16 @@ def compile_source(ws_dir=None, no_pervasives=None, pervasives_dir=None,
     if ROS:
         rospackage.do_pass(infos.ast, plantinfo)
 
+    # Docker files generation
+    if docker:
+        if not plantinfo:
+            raise Exit(-6, "Docker generation requires a plant. Use --plant to specify one.")
+        package_name = infos.ast._name
+        package_folder = ws_rospath(package_name)
+        distro = ros_distro if ros_distro else 'jazzy'
+        domain_id = ros_domain_id if ros_domain_id else 0
+        dockergen.do_pass(plantinfo, package_name, package_folder, 
+                         ros_distro=distro, ros_domain_id=domain_id)
 
     #Object file generation
     destobjf = None
@@ -397,6 +409,9 @@ if __name__ == "__main__":
     compilep.add_argument('radl_file', metavar='modname.radl', help='the RADL source file defining a module named F')
     compilep.add_argument('--plant', help='specify the plant to be compiled.')
     compilep.add_argument('--ROS', action='store_true', help='Generate a ROS package for this module.')
+    compilep.add_argument('--docker', action='store_true', help='Generate Dockerfiles and docker-compose.yml for container deployment. Requires --plant.')
+    compilep.add_argument('--ros_distro', default='jazzy', help='ROS distribution for Docker containers (default: jazzy)')
+    compilep.add_argument('--ros_domain_id', type=int, default=0, help='ROS domain ID for network isolation (default: 0)')
     compilep.add_argument('-i', '--instrument', default=[], nargs='*', choices=['step_timings', 'msg_timings'], help='Instrument the generated code to allow data to be collected at run time.\n    "step_timings" records the step function call timings.\n    "msg_timings" records the messages timings (this has quite a lot of impact since it increases the message sizes).')
 
     analyzep = subs_p.add_parser('analyze', help='compute statistics from the output of instrumented nodes.')

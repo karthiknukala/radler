@@ -1,5 +1,15 @@
-# This is an auto generated Dockerfile for ros2:devel
-# generated from docker_images_ros2/devel/create_ros_image.Dockerfile.em
+# Radler Development Container (Legacy)
+# =====================================
+# This is a self-contained development image that clones radler and builds
+# the pubsub example. For more flexible workflows, see docker/builder/
+#
+# For the new recommended workflow:
+#   cd docker/builder && docker build -t radler/builder .
+#   docker run -v $(pwd):/project -v /tmp/output:/output radler/builder \
+#       /project/my_system.radl --plant plant --docker --build
+#
+# This legacy image is kept for quick testing of the pubsub example.
+
 ARG FROM_IMAGE=ubuntu:noble
 FROM $FROM_IMAGE
 
