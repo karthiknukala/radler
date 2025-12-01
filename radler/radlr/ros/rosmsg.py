@@ -150,4 +150,13 @@ def generate_package_msg_files(package_folder, package_name, ast):
     msgtogen = collect(package_folder, package_name, ast, False)
 
     msgs += generate_msg_files(msgtogen)
-    return msgs
+    
+    # Deduplicate message files (same file can appear from copying and generation)
+    seen = set()
+    unique_msgs = []
+    for m in msgs:
+        m_resolved = m.resolve()
+        if m_resolved not in seen:
+            seen.add(m_resolved)
+            unique_msgs.append(m)
+    return unique_msgs
