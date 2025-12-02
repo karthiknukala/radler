@@ -154,19 +154,26 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
     # Remove existing copies to avoid conflicts
     rm -rf radl_lib radlast_4_radl ros/radl 2>/dev/null || true
     
-    # Copy radler pervasives (radl_lib, radlast_4_radl, ros/radl)
-    cp -rL "$RADLER_DIR/radl_lib" .
-    cp -rL "$RADLER_DIR/pervasives/radlast_4_radl" .
-    mkdir -p ros
-    cp -rL "$RADLER_DIR/pervasives/ros/radl" ros/
+    # Copy radler pervasives (radl_lib has no problematic symlinks)
+    cp -r "$RADLER_DIR/radl_lib" .
     
-    # Delete any symlinks that got copied (cp -L should dereference, but just in case)
-    find . -type l -delete 2>/dev/null || true
+    # For radlast_4_radl, copy individual files to avoid cyclic symlink
+    mkdir -p radlast_4_radl/include
+    cp "$RADLER_DIR/pervasives/radlast_4_radl/CMakeLists.txt" radlast_4_radl/
+    cp "$RADLER_DIR/pervasives/radlast_4_radl/package.xml" radlast_4_radl/
+    cp "$RADLER_DIR/pervasives/radlast_4_radl/radlast_4_radl.c" radlast_4_radl/
+    cp -r "$RADLER_DIR/pervasives/radlast_4_radl/include/"* radlast_4_radl/include/
     
-    # radlast_4_radl needs pervasives/src as user_src
-    rm -rf radlast_4_radl/user_src 2>/dev/null || true
+    # Create user_src with pervasives/src contents
     mkdir -p radlast_4_radl/user_src/src
     cp -r "$RADLER_DIR/pervasives/src/"* radlast_4_radl/user_src/src/
+    
+    # Copy ros/radl
+    mkdir -p ros
+    cp -r "$RADLER_DIR/pervasives/ros/radl" ros/
+    
+    # Delete any remaining symlinks
+    find . -type l -delete 2>/dev/null || true
     
     # Copy user source files into the user's radlast package
     # The user sources are at /project/src (mounted by the user)
