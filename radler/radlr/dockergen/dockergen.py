@@ -125,10 +125,11 @@ services:
 {services}
 '''
 
-# FastDDS configuration for unicast peer discovery
+# FastDDS configuration for Docker container discovery
+# Uses container hostnames which Docker DNS resolves
 FASTDDS_CONFIG_TEMPLATE = '''<?xml version="1.0" encoding="UTF-8" ?>
 <!-- Auto-generated FastDDS configuration for Radler plant -->
-<!-- This enables unicast peer discovery across Docker containers -->
+<!-- This enables peer discovery across Docker containers using hostnames -->
 <dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
     <profiles>
         <participant profile_name="radler_participant" is_default_profile="true">
@@ -136,20 +137,14 @@ FASTDDS_CONFIG_TEMPLATE = '''<?xml version="1.0" encoding="UTF-8" ?>
                 <builtin>
                     <discovery_config>
                         <discoveryProtocol>SIMPLE</discoveryProtocol>
-                        <initialAnnouncements>
-                            <count>5</count>
-                            <period>
-                                <sec>1</sec>
-                            </period>
-                        </initialAnnouncements>
+                        <simpleEDP>
+                            <PUBWRITER_SUBALIVE>true</PUBWRITER_SUBALIVE>
+                            <PUBREADER_SUBALIVE>true</PUBREADER_SUBALIVE>
+                        </simpleEDP>
+                        <leaseDuration>
+                            <sec>10</sec>
+                        </leaseDuration>
                     </discovery_config>
-                    <metatrafficUnicastLocatorList>
-                        <locator>
-                            <udpv4>
-                                <port>7412</port>
-                            </udpv4>
-                        </locator>
-                    </metatrafficUnicastLocatorList>
                     <initialPeersList>
 {peer_list}
                     </initialPeersList>
@@ -162,7 +157,7 @@ FASTDDS_CONFIG_TEMPLATE = '''<?xml version="1.0" encoding="UTF-8" ?>
 
 FASTDDS_PEER_TEMPLATE = '''                        <locator>
                             <udpv4>
-                                <address>{ip}</address>
+                                <address>{hostname}</address>
                                 <port>7412</port>
                             </udpv4>
                         </locator>
@@ -295,10 +290,12 @@ def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_dom
     compose_path = docker_folder / 'docker-compose.yml'
     write_file(compose_path, compose_content)
     
-    # Generate FastDDS configuration for peer discovery
+    # Generate FastDDS configuration for peer discovery using container hostnames
     peer_list = ""
-    for ip in d['all_ips']:
-        peer_list += FASTDDS_PEER_TEMPLATE.format(ip=ip)
+    for node_name in d['nodes']:
+        # Use Docker container names (package_name) as hostnames
+        hostname = f"{package_name}_{node_name}"
+        peer_list += FASTDDS_PEER_TEMPLATE.format(hostname=hostname)
     
     fastdds_content = FASTDDS_CONFIG_TEMPLATE.format(peer_list=peer_list)
     fastdds_path = docker_folder / 'fastdds.xml'
