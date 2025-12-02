@@ -148,29 +148,30 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
     echo -e "${GREEN}Copying dependencies for Docker build...${NC}"
     cd "$OUTPUT_DIR/src"
     
+    # First, delete ALL symlinks to avoid circular references
+    find . -type l -delete
+    
     # Copy radler pervasives (radl_lib, radlast_4_radl, ros/radl)
-    rm -f radl_lib 2>/dev/null  # Remove symlink if exists
-    cp -r "$RADLER_DIR/../radl_lib" .
-    
-    rm -f radlast_4_radl 2>/dev/null
-    cp -r "$RADLER_DIR/../pervasives/radlast_4_radl" .
-    
+    cp -r "$RADLER_DIR/radl_lib" .
+    cp -r "$RADLER_DIR/pervasives/radlast_4_radl" .
     mkdir -p ros
-    rm -f ros/radl 2>/dev/null
-    cp -r "$RADLER_DIR/../pervasives/ros/radl" ros/
+    cp -r "$RADLER_DIR/pervasives/ros/radl" ros/
     
-    # Replace any remaining symlinks with their targets
-    find . -type l | while read link; do
-        target=$(readlink -f "$link")
-        if [[ -e "$target" ]]; then
-            rm "$link"
-            if [[ -d "$target" ]]; then
-                cp -r "$target" "$link"
-            else
-                cp "$target" "$link"
+    # radlast_4_radl needs pervasives/src as user_src
+    rm -rf radlast_4_radl/user_src
+    mkdir -p radlast_4_radl/user_src
+    cp -r "$RADLER_DIR/pervasives/src" radlast_4_radl/user_src/
+    
+    # Copy user source files into the user's radlast package
+    # The user sources are at /project/src (mounted by the user)
+    if [[ -d "/project/src" ]]; then
+        for pkg in radlast_*_*; do  # Match radlast_6_pubsub etc, not radlast_4_radl
+            if [[ -d "$pkg" ]]; then
+                rm -rf "$pkg/user_src"
+                cp -r /project/src "$pkg/user_src"
             fi
-        fi
-    done
+        done
+    fi
     
     echo -e "${GREEN}All files copied - ready for Docker build${NC}"
 fi
