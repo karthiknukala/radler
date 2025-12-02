@@ -42,16 +42,30 @@ DOCKERFILE_NODE_TEMPLATE = '''# Auto-generated Dockerfile for node: {node_name}
 # Run:
 #   docker run --rm --network {package_name}_radler_net {package_name}/{node_name}
 
-FROM ros:{ros_distro}-ros-core
+FROM ros:{ros_distro}-ros-base AS builder
 
-# Install runtime dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \\
-    libstdc++6 \\
+    python3-colcon-common-extensions \\
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the built ROS packages (paths relative to workspace root)
-COPY install/{package_name} /opt/ros_ws/install/{package_name}
-COPY install/radl_lib /opt/ros_ws/install/radl_lib
+# Copy source packages
+WORKDIR /ros_ws
+COPY src/radl_lib src/radl_lib
+COPY src/radlast_4_radl src/radlast_4_radl
+COPY src/radlast_*_{package_name} src/
+COPY src/ros/{package_name} src/ros/{package_name}
+COPY src/ros/radl src/ros/radl
+
+# Build
+RUN . /opt/ros/{ros_distro}/setup.sh && \\
+    colcon build --packages-select radl_lib radlast_4_radl radl {package_name}
+
+# Runtime stage - minimal image
+FROM ros:{ros_distro}-ros-core
+
+# Copy built packages from builder
+COPY --from=builder /ros_ws/install /opt/ros_ws/install
 
 # Copy FastDDS configuration for peer discovery
 COPY src/ros/{package_name}/docker/fastdds.xml /opt/ros_ws/fastdds.xml
@@ -65,7 +79,7 @@ ENV FASTRTPS_DEFAULT_PROFILES_FILE=/opt/ros_ws/fastdds.xml
 RUN echo '#!/bin/bash\\n\\
 set -e\\n\\
 source /opt/ros/{ros_distro}/setup.bash\\n\\
-source /opt/ros_ws/install/{package_name}/local_setup.bash\\n\\
+source /opt/ros_ws/install/local_setup.bash\\n\\
 exec "$@"' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
@@ -328,15 +342,16 @@ def generate_run_instructions(d, network_subnet):
     """Generate console-friendly run instructions with specific node names."""
     pkg = d['package_name']
     nodes = d['nodes']
+    distro = d['ros_distro']
     
-    # Build ros2 run commands for interactive use
-    ros2_commands = '\n'.join(f'ros2 run {pkg} {n} &' for n in nodes[:-1])
+    # Native ros2 run commands
+    native_run_cmds = '\n  '.join(f'ros2 run {pkg} {n} &' for n in nodes[:-1])
     if nodes:
-        ros2_commands += f'\nros2 run {pkg} {nodes[-1]}'  # Last one without &
+        native_run_cmds += f'\n  ros2 run {pkg} {nodes[-1]}'
     
-    # Build individual docker run commands
-    docker_run_cmds = '\n'.join(
-        f'# Run {n}:\ndocker run --rm --network {pkg}_radler_net {pkg}/{n}'
+    # Docker run commands for individual containers
+    docker_run_cmds = '\n  '.join(
+        f'docker run --rm --network {pkg}_radler_net {pkg}/{n}'
         for n in nodes
     )
     
@@ -347,29 +362,29 @@ def generate_run_instructions(d, network_subnet):
 
 Nodes: {', '.join(nodes)}
 
-=== OPTION 1: Docker Compose (recommended) ===
+Replace <HOST_PATH> below with your mount path (e.g., /tmp/ros_ws)
 
-Run on your HOST machine (replace <HOST_PATH> with your mount path, e.g., /tmp/ros_ws):
+------------------------------------------
+ OPTION 1: Native (requires ROS2 + colcon)
+------------------------------------------
+
+  cd <HOST_PATH>
+  source /opt/ros/{distro}/setup.bash
+  colcon build
+  source install/local_setup.bash
+  {native_run_cmds}
+
+------------------------------------------
+ OPTION 2: Docker (no ROS installation needed)
+------------------------------------------
 
   cd <HOST_PATH>/src/ros/{pkg}/docker
   docker-compose build
   docker-compose up
 
-=== OPTION 2: Interactive Container ===
+Or run containers individually after build:
 
-  docker run -it --rm -v <HOST_PATH>:/ros_ws ros:jazzy-ros-core bash
-
-Then inside the container:
-
-  source /opt/ros/jazzy/setup.bash
-  source /ros_ws/install/local_setup.bash
-  {ros2_commands}
-
-=== OPTION 3: Individual Containers ===
-
-First build with docker-compose, then run individually:
-
-{docker_run_cmds}
+  {docker_run_cmds}
 
 ==========================================
 '''

@@ -176,17 +176,23 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
         cat "$INSTRUCTIONS_FILE"
         echo -e "${NC}"
         echo -e "${YELLOW}Note: Replace <HOST_PATH> with your actual mount path (e.g., /tmp/ros_ws)${NC}"
+        echo ""
+        echo -e "${GREEN}The Docker containers will build ROS packages internally - no local ROS needed!${NC}"
     fi
+elif [[ "$RUN_BUILD" == true ]]; then
+    echo -e "${GREEN}Done!${NC}"
+    echo ""
+    echo "Generated and built files are in: $OUTPUT_DIR"
+    echo ""
+    echo "To run, start a container and use ros2 run:"
+    echo "  docker run -it --rm -v <HOST_PATH>:/ros_ws ros:jazzy-ros-core bash"
+    echo "  source /opt/ros/jazzy/setup.bash && source /ros_ws/install/local_setup.bash"
+    echo "  ros2 run $MODULE_NAME <node_name>"
 else
     echo -e "${GREEN}Done!${NC}"
     echo ""
-    echo "Generated files are in: $OUTPUT_DIR"
-    if [[ "$RUN_BUILD" == true ]]; then
-        echo ""
-        echo "To run, start a container and use ros2 run:"
-        echo "  docker run -it --rm -v <HOST_PATH>:/ros_ws ros:jazzy-ros-core bash"
-        echo "  source /opt/ros/jazzy/setup.bash && source /ros_ws/install/local_setup.bash"
-        echo "  ros2 run $MODULE_NAME <node_name>"
-    fi
+    echo "Generated source files are in: $OUTPUT_DIR/src"
+    echo ""
+    echo "To build, use --build flag or run colcon build manually."
 fi
 
