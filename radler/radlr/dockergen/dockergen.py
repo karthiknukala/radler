@@ -241,16 +241,17 @@ def machine(visitor, m, d):
 def compute_network_subnet(ips):
     """Compute an appropriate subnet that contains all the given IPs."""
     if not ips:
-        return "172.28.0.0/16"
+        return "172.30.0.0/16"
     
     # Parse the first IP to determine the subnet
     first_ip = ips[0]
     parts = first_ip.split('.')
     if len(parts) == 4:
-        # Use the first two octets for /16 subnet
-        return f"{parts[0]}.{parts[1]}.0.0/16"
+        # Use a subnet that's less likely to conflict with Docker defaults
+        # Docker uses 172.17.x.x by default, so we offset to 172.30.x.x
+        return f"172.30.{parts[2]}.0/24"
     
-    return "172.28.0.0/16"
+    return "172.30.0.0/16"
 
 
 def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_domain_id=0):
