@@ -165,19 +165,28 @@ if [[ "$SETUP_SROS2" == true ]]; then
     echo -e "${YELLOW}Note: You may need to create additional enclaves for your nodes${NC}"
 fi
 
-echo -e "${GREEN}Done!${NC}"
-echo ""
-echo "Generated files are in: $OUTPUT_DIR"
+# Find the ROS package directory (it's under ros/<module_name>)
+ROS_PKG_DIR="$OUTPUT_DIR/src/ros/$MODULE_NAME"
 
-if [[ "$RUN_BUILD" == true ]]; then
-    echo ""
-    echo "Built executables are in: $OUTPUT_DIR/install/$MODULE_NAME/bin/"
-fi
-
+# Print generated run instructions if docker mode was used
 if [[ "$GENERATE_DOCKER" == true ]]; then
+    INSTRUCTIONS_FILE="$ROS_PKG_DIR/docker/RUN_INSTRUCTIONS.txt"
+    if [[ -f "$INSTRUCTIONS_FILE" ]]; then
+        echo -e "${GREEN}"
+        cat "$INSTRUCTIONS_FILE"
+        echo -e "${NC}"
+        echo -e "${YELLOW}Note: Replace <HOST_PATH> with your actual mount path (e.g., /tmp/ros_ws)${NC}"
+    fi
+else
+    echo -e "${GREEN}Done!${NC}"
     echo ""
-    echo "Docker artifacts are in: $OUTPUT_DIR/docker/"
-    echo "To build containers: cd $OUTPUT_DIR/docker && docker-compose build"
-    echo "To run the plant:    cd $OUTPUT_DIR/docker && docker-compose up"
+    echo "Generated files are in: $OUTPUT_DIR"
+    if [[ "$RUN_BUILD" == true ]]; then
+        echo ""
+        echo "To run, start a container and use ros2 run:"
+        echo "  docker run -it --rm -v <HOST_PATH>:/ros_ws ros:jazzy-ros-core bash"
+        echo "  source /opt/ros/jazzy/setup.bash && source /ros_ws/install/local_setup.bash"
+        echo "  ros2 run $MODULE_NAME <node_name>"
+    fi
 fi
 

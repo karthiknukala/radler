@@ -27,7 +27,6 @@ Created on Dec, 2024
 
 from pathlib import Path
 
-from radler.astutils.nodetrees import fun_dict_of
 from radler.astutils.tools import write_file, ensure_dir
 from radler.radlr import infos
 from radler.radlr.errors import warning, log1
@@ -210,7 +209,7 @@ def node(visitor, n, d):
     log1(f"Generated Dockerfile for node: {name}" + (f" (IP: {node_ip})" if node_ip else ""))
 
 
-def linux_system(visitor, s, d):
+def linux(visitor, s, d):
     """Process a linux system definition."""
     # Get IP if specified
     try:
@@ -279,7 +278,7 @@ def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_dom
     
     # Visit the plant to generate Dockerfiles for each node
     v = AstVisitor(
-        fun_dict_of((machine, node, ('linux', linux_system))),
+        {'machine': machine, 'node': node, 'linux': linux},
         onleaf=follow_links(AstVisitor.leaf_bf),
         kind='bf'
     )
@@ -313,9 +312,65 @@ def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_dom
     readme_path = docker_folder / 'README.md'
     write_file(readme_path, readme_content)
     
+    # Generate run instructions (for console output)
+    instructions = generate_run_instructions(d, network_subnet)
+    instructions_path = docker_folder / 'RUN_INSTRUCTIONS.txt'
+    write_file(instructions_path, instructions)
+    
     log1(f"Generated Docker artifacts in: {docker_folder}")
     
-    return d['dockerfiles'] + ['docker-compose.yml', 'fastdds.xml', 'README.md']
+    return d['dockerfiles'] + ['docker-compose.yml', 'fastdds.xml', 'README.md', 'RUN_INSTRUCTIONS.txt']
+
+
+def generate_run_instructions(d, network_subnet):
+    """Generate console-friendly run instructions with specific node names."""
+    pkg = d['package_name']
+    nodes = d['nodes']
+    
+    # Build ros2 run commands for interactive use
+    ros2_commands = '\n'.join(f'ros2 run {pkg} {n} &' for n in nodes[:-1])
+    if nodes:
+        ros2_commands += f'\nros2 run {pkg} {nodes[-1]}'  # Last one without &
+    
+    # Build individual docker run commands
+    docker_run_cmds = '\n'.join(
+        f'# Run {n}:\ndocker run --rm --network {pkg}_radler_net {pkg}/{n}'
+        for n in nodes
+    )
+    
+    return f'''
+==========================================
+ RADLER BUILD COMPLETE: {pkg}
+==========================================
+
+Nodes: {', '.join(nodes)}
+
+=== OPTION 1: Docker Compose (recommended) ===
+
+Run on your HOST machine (replace <HOST_PATH> with your mount path, e.g., /tmp/ros_ws):
+
+  cd <HOST_PATH>/src/ros/{pkg}/docker
+  docker-compose build
+  docker-compose up
+
+=== OPTION 2: Interactive Container ===
+
+  docker run -it --rm -v <HOST_PATH>:/ros_ws ros:jazzy-ros-core bash
+
+Then inside the container:
+
+  source /opt/ros/jazzy/setup.bash
+  source /ros_ws/install/local_setup.bash
+  {ros2_commands}
+
+=== OPTION 3: Individual Containers ===
+
+First build with docker-compose, then run individually:
+
+{docker_run_cmds}
+
+==========================================
+'''
 
 
 def generate_docker_readme(d, network_subnet):
