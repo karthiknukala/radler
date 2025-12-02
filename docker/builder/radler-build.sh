@@ -148,17 +148,23 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
     echo -e "${GREEN}Copying dependencies for Docker build...${NC}"
     cd "$OUTPUT_DIR/src"
     
-    # First, delete ALL symlinks to avoid circular references
-    find . -type l -delete
+    # First, delete ALL symlinks in the OUTPUT to avoid circular references
+    find . -type l -delete 2>/dev/null || true
+    
+    # Remove existing copies to avoid conflicts
+    rm -rf radl_lib radlast_4_radl ros/radl 2>/dev/null || true
     
     # Copy radler pervasives (radl_lib, radlast_4_radl, ros/radl)
-    cp -r "$RADLER_DIR/radl_lib" .
-    cp -r "$RADLER_DIR/pervasives/radlast_4_radl" .
+    cp -rL "$RADLER_DIR/radl_lib" .
+    cp -rL "$RADLER_DIR/pervasives/radlast_4_radl" .
     mkdir -p ros
-    cp -r "$RADLER_DIR/pervasives/ros/radl" ros/
+    cp -rL "$RADLER_DIR/pervasives/ros/radl" ros/
+    
+    # Delete any symlinks that got copied (cp -L should dereference, but just in case)
+    find . -type l -delete 2>/dev/null || true
     
     # radlast_4_radl needs pervasives/src as user_src
-    rm -rf radlast_4_radl/user_src
+    rm -rf radlast_4_radl/user_src 2>/dev/null || true
     mkdir -p radlast_4_radl/user_src/src
     cp -r "$RADLER_DIR/pervasives/src/"* radlast_4_radl/user_src/src/
     
@@ -171,7 +177,7 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
                 continue
             fi
             if [[ -d "$pkg" ]]; then
-                rm -rf "$pkg/user_src"
+                rm -rf "$pkg/user_src" 2>/dev/null || true
                 cp -r /project/src "$pkg/user_src"
             fi
         done
