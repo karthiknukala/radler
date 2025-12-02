@@ -50,18 +50,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     git \\
     && rm -rf /var/lib/apt/lists/*
 
-# Clone radler for base packages (radl_lib, pervasives)
-RUN git clone --depth 1 --branch modernizing https://github.com/karthiknukala/radler.git /opt/radler
-
-# Setup workspace with radler base packages
+# Copy all source packages (already prepared by radler-build.sh)
 WORKDIR /ros_ws
-RUN cp -r /opt/radler/radl_lib src/ && \\
-    cp -r /opt/radler/pervasives/radlast_4_radl src/ && \\
-    cp -r /opt/radler/pervasives/ros/radl src/ros/
-
-# Copy user's generated packages
-COPY src/radlast_*_{package_name} src/
-COPY src/ros/{package_name} src/ros/{package_name}
+COPY src/ src/
 
 # Build all packages
 RUN . /opt/ros/{ros_distro}/setup.sh && \\

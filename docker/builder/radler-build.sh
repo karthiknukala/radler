@@ -142,13 +142,24 @@ cd "$RADLER_DIR"
 echo -e "${GREEN}Running: $RADLER_CMD${NC}"
 eval $RADLER_CMD
 
-# If generating Docker, replace symlinks with actual copies
+# If generating Docker, copy all dependencies into output
 # (Docker build context can't follow symlinks outside the context)
 if [[ "$GENERATE_DOCKER" == true ]]; then
-    echo -e "${GREEN}Copying symlinked files for Docker build...${NC}"
+    echo -e "${GREEN}Copying dependencies for Docker build...${NC}"
     cd "$OUTPUT_DIR/src"
     
-    # Find and replace symlinks with their targets
+    # Copy radler pervasives (radl_lib, radlast_4_radl, ros/radl)
+    rm -f radl_lib 2>/dev/null  # Remove symlink if exists
+    cp -r "$RADLER_DIR/../radl_lib" .
+    
+    rm -f radlast_4_radl 2>/dev/null
+    cp -r "$RADLER_DIR/../pervasives/radlast_4_radl" .
+    
+    mkdir -p ros
+    rm -f ros/radl 2>/dev/null
+    cp -r "$RADLER_DIR/../pervasives/ros/radl" ros/
+    
+    # Replace any remaining symlinks with their targets
     find . -type l | while read link; do
         target=$(readlink -f "$link")
         if [[ -e "$target" ]]; then
@@ -160,6 +171,8 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
             fi
         fi
     done
+    
+    echo -e "${GREEN}All files copied - ready for Docker build${NC}"
 fi
 
 # Build with colcon if requested
