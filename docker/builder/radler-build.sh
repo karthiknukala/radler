@@ -142,6 +142,26 @@ cd "$RADLER_DIR"
 echo -e "${GREEN}Running: $RADLER_CMD${NC}"
 eval $RADLER_CMD
 
+# If generating Docker, replace symlinks with actual copies
+# (Docker build context can't follow symlinks outside the context)
+if [[ "$GENERATE_DOCKER" == true ]]; then
+    echo -e "${GREEN}Copying symlinked files for Docker build...${NC}"
+    cd "$OUTPUT_DIR/src"
+    
+    # Find and replace symlinks with their targets
+    find . -type l | while read link; do
+        target=$(readlink -f "$link")
+        if [[ -e "$target" ]]; then
+            rm "$link"
+            if [[ -d "$target" ]]; then
+                cp -r "$target" "$link"
+            else
+                cp "$target" "$link"
+            fi
+        fi
+    done
+fi
+
 # Build with colcon if requested
 if [[ "$RUN_BUILD" == true ]]; then
     echo -e "${GREEN}Building with colcon...${NC}"
