@@ -44,11 +44,10 @@ DOCKERFILE_NODE_TEMPLATE = '''# Auto-generated Dockerfile for node: {node_name}
 
 FROM ros:{ros_distro}-ros-base AS builder
 
-# Install build dependencies and Cyclone DDS
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     python3-colcon-common-extensions \\
     git \\
-    ros-{ros_distro}-rmw-cyclonedds-cpp \\
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all source packages (already prepared by radler-build.sh)
@@ -62,18 +61,11 @@ RUN . /opt/ros/{ros_distro}/setup.sh && \\
 # Runtime stage - minimal image
 FROM ros:{ros_distro}-ros-core
 
-# Install Cyclone DDS for better Docker networking support
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    ros-{ros_distro}-rmw-cyclonedds-cpp \\
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy built packages from builder
 COPY --from=builder /ros_ws/install /opt/ros_ws/install
 
-# Environment configuration
+# Environment configuration - use FastDDS (default)
 ENV ROS_DOMAIN_ID={ros_domain_id}
-# Use Cyclone DDS - it works better with Docker networking
-ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Create entrypoint script
 RUN echo '#!/bin/bash\\n\\
@@ -121,7 +113,6 @@ x-radler-common: &radler-common
   restart: unless-stopped
   environment:
     - ROS_DOMAIN_ID=${{ROS_DOMAIN_ID:-{ros_domain_id}}}
-    - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 services:
 {services}
