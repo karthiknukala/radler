@@ -83,19 +83,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/opt/ros_ws/install/{package_name}/lib/{package_name}/{node_name}"]
 '''
 
-# Docker Compose service template for nodes with static IP
-COMPOSE_SERVICE_WITH_IP_TEMPLATE = '''  {node_name}:
-    <<: *radler-common
-    build:
-      context: ../../../..
-      dockerfile: src/ros/{package_name}/docker/Dockerfile.{node_name}
-    container_name: {package_name}_{node_name}
-    networks:
-      radler_net:
-        ipv4_address: {node_ip}
-'''
-
-# Docker Compose service template for nodes without static IP
+# Docker Compose service template (no static IPs - Docker handles networking)
 COMPOSE_SERVICE_TEMPLATE = '''  {node_name}:
     <<: *radler-common
     build:
@@ -207,13 +195,10 @@ def node(visitor, n, d):
     write_file(dockerfile_path, dockerfile_content)
     d['dockerfiles'].append(f'Dockerfile.{name}')
     
-    # Add service entry for docker-compose (with or without IP)
+    # Add service entry for docker-compose
+    service_content = COMPOSE_SERVICE_TEMPLATE.format(**node_info)
     if node_ip:
-        node_info['node_ip'] = node_ip
-        service_content = COMPOSE_SERVICE_WITH_IP_TEMPLATE.format(**node_info)
         d['node_ips'][name] = node_ip
-    else:
-        service_content = COMPOSE_SERVICE_TEMPLATE.format(**node_info)
     
     d['services'] += service_content
     d['nodes'].append(name)
