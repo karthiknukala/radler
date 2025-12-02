@@ -159,13 +159,17 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
     
     # radlast_4_radl needs pervasives/src as user_src
     rm -rf radlast_4_radl/user_src
-    mkdir -p radlast_4_radl/user_src
-    cp -r "$RADLER_DIR/pervasives/src" radlast_4_radl/user_src/
+    mkdir -p radlast_4_radl/user_src/src
+    cp -r "$RADLER_DIR/pervasives/src/"* radlast_4_radl/user_src/src/
     
     # Copy user source files into the user's radlast package
     # The user sources are at /project/src (mounted by the user)
     if [[ -d "/project/src" ]]; then
-        for pkg in radlast_*_*; do  # Match radlast_6_pubsub etc, not radlast_4_radl
+        for pkg in radlast_*; do
+            # Skip radlast_4_radl (pervasives) - only copy to user packages
+            if [[ "$pkg" == "radlast_4_radl" ]]; then
+                continue
+            fi
             if [[ -d "$pkg" ]]; then
                 rm -rf "$pkg/user_src"
                 cp -r /project/src "$pkg/user_src"
