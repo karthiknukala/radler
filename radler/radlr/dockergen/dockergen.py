@@ -47,19 +47,26 @@ FROM ros:{ros_distro}-ros-base AS builder
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     python3-colcon-common-extensions \\
+    git \\
     && rm -rf /var/lib/apt/lists/*
 
-# Copy source packages
+# Clone radler for base packages (radl_lib, pervasives)
+RUN git clone --depth 1 https://github.com/karthiknukala/radler.git /opt/radler && \\
+    cd /opt/radler && git checkout modernizing
+
+# Setup workspace with radler base packages
 WORKDIR /ros_ws
-COPY src/radl_lib src/radl_lib
-COPY src/radlast_4_radl src/radlast_4_radl
+RUN cp -r /opt/radler/radl_lib src/ && \\
+    cp -r /opt/radler/pervasives/radlast_4_radl src/ && \\
+    cp -r /opt/radler/pervasives/ros/radl src/ros/
+
+# Copy user's generated packages
 COPY src/radlast_*_{package_name} src/
 COPY src/ros/{package_name} src/ros/{package_name}
-COPY src/ros/radl src/ros/radl
 
-# Build
+# Build all packages
 RUN . /opt/ros/{ros_distro}/setup.sh && \\
-    colcon build --packages-select radl_lib radlast_4_radl radl {package_name}
+    colcon build
 
 # Runtime stage - minimal image
 FROM ros:{ros_distro}-ros-core
@@ -118,8 +125,6 @@ DOCKER_COMPOSE_TEMPLATE = '''# Auto-generated docker-compose.yml for Radler plan
 #   docker-compose build    # Build all node containers
 #   docker-compose up       # Run all nodes
 #   docker-compose up -d    # Run all nodes in background
-
-version: '3.8'
 
 # Custom network for Radler nodes
 networks:
