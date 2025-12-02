@@ -29,8 +29,85 @@ from pathlib import Path
 
 from radler.astutils.tools import write_file, ensure_dir
 from radler.radlr import infos
-from radler.radlr.errors import warning, log1
+from radler.radlr.errors import log1
 from radler.radlr.rast import AstVisitor, follow_links
+
+
+# Mapping from CMAKE_MODULE names to ROS2 apt packages
+# This maps common ROS package names to their apt package equivalents
+CMAKE_TO_APT_PACKAGES = {
+    # Standard ROS2 messages
+    'sensor_msgs': 'ros-{distro}-sensor-msgs',
+    'std_msgs': 'ros-{distro}-std-msgs',
+    'nav_msgs': 'ros-{distro}-nav-msgs',
+    'geometry_msgs': 'ros-{distro}-geometry-msgs',
+    'visualization_msgs': 'ros-{distro}-visualization-msgs',
+    'diagnostic_msgs': 'ros-{distro}-diagnostic-msgs',
+    'trajectory_msgs': 'ros-{distro}-trajectory-msgs',
+    'actionlib_msgs': 'ros-{distro}-actionlib-msgs',
+    
+    # Common ROS2 packages
+    'mavros_msgs': 'ros-{distro}-mavros-msgs',
+    'tf2': 'ros-{distro}-tf2',
+    'tf2_ros': 'ros-{distro}-tf2-ros',
+    'cv_bridge': 'ros-{distro}-cv-bridge',
+    'image_transport': 'ros-{distro}-image-transport',
+    
+    # System libraries (non-ROS)
+    'Curses': 'libncurses-dev',
+    'OpenCV': 'libopencv-dev',
+    'Eigen3': 'libeigen3-dev',
+    'Boost': 'libboost-all-dev',
+}
+
+
+def collect_cmake_dependencies(plantinfo):
+    """
+    Collect all cmake_library dependencies from nodes in the plant.
+    Returns a set of CMAKE_MODULE names.
+    """
+    cmake_deps = set()
+    
+    # plantinfo.nodes contains the list of node AST objects
+    for node_ast in plantinfo.nodes:
+        try:
+            # Get the CXX block (single item, not a list)
+            cxx = node_ast['CXX']
+            if cxx:
+                # LIB is a list of cmake_library/static_library refs
+                for lib in cxx['LIB']:
+                    if hasattr(lib, '_kind') and lib._kind == 'cmake_library':
+                        cmake_module = lib['CMAKE_MODULE']
+                        if cmake_module:
+                            cmake_deps.add(cmake_module._val)
+        except (AttributeError, KeyError, TypeError):
+            pass
+    
+    return cmake_deps
+
+
+def get_apt_packages(cmake_deps, ros_distro):
+    """
+    Convert cmake module names to apt package names.
+    Returns a list of apt packages to install.
+    """
+    apt_packages = []
+    unknown_deps = []
+    
+    for dep in cmake_deps:
+        if dep in CMAKE_TO_APT_PACKAGES:
+            pkg = CMAKE_TO_APT_PACKAGES[dep].format(distro=ros_distro)
+            apt_packages.append(pkg)
+        else:
+            # Try common ROS package naming convention
+            ros_pkg = f'ros-{ros_distro}-{dep.lower().replace("_", "-")}'
+            apt_packages.append(ros_pkg)
+            unknown_deps.append(dep)
+    
+    if unknown_deps:
+        log1(f"Note: Unknown cmake dependencies (guessing apt names): {unknown_deps}")
+    
+    return sorted(set(apt_packages))
 
 
 # Dockerfile template for individual nodes
@@ -43,11 +120,11 @@ DOCKERFILE_NODE_TEMPLATE = '''# Auto-generated Dockerfile for node: {node_name}
 #   docker run --rm --network {package_name}_radler_net {package_name}/{node_name}
 
 FROM ros:{ros_distro}-ros-base AS builder
-
+{extra_deps_comment}
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     python3-colcon-common-extensions \\
-    git \\
+    git{apt_packages_line} \\
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all source packages (already prepared by radler-build.sh)
@@ -60,7 +137,7 @@ RUN . /opt/ros/{ros_distro}/setup.sh && \\
 
 # Runtime stage - minimal image
 FROM ros:{ros_distro}-ros-core
-
+{runtime_deps}
 # Copy built packages from builder
 COPY --from=builder /ros_ws/install /opt/ros_ws/install
 
@@ -175,6 +252,9 @@ def node(visitor, n, d):
         'ros_distro': d['ros_distro'],
         'ros_domain_id': d['ros_domain_id'],
         'source_file': str(infos.source_file),
+        'apt_packages_line': d.get('apt_packages_line', ''),
+        'extra_deps_comment': d.get('extra_deps_comment', ''),
+        'runtime_deps': d.get('runtime_deps', ''),
     }
     
     # Generate the Dockerfile for this node
@@ -244,6 +324,33 @@ def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_dom
     docker_folder = package_folder / 'docker'
     ensure_dir(docker_folder)
     
+    # Collect cmake dependencies from the plant
+    cmake_deps = collect_cmake_dependencies(plantinfo)
+    apt_packages = get_apt_packages(cmake_deps, ros_distro)
+    if cmake_deps:
+        log1(f"Detected cmake dependencies: {cmake_deps}")
+        log1(f"Apt packages to install: {apt_packages}")
+    
+    # Format apt package install lines for Dockerfile
+    if apt_packages:
+        apt_packages_line = ' \\\n    ' + ' \\\n    '.join(apt_packages)
+        extra_deps_comment = f'\n# External dependencies: {", ".join(sorted(cmake_deps))}'
+        # For runtime, only install ROS message packages (not -dev packages)
+        runtime_pkgs = [p for p in apt_packages if not p.endswith('-dev')]
+        if runtime_pkgs:
+            runtime_deps = f'''
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    {' '.join(runtime_pkgs)} \\
+    && rm -rf /var/lib/apt/lists/*
+'''
+        else:
+            runtime_deps = ''
+    else:
+        apt_packages_line = ''
+        extra_deps_comment = ''
+        runtime_deps = ''
+    
     d = {
         'package_name': package_name,
         'package_folder': package_folder,
@@ -259,6 +366,10 @@ def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_dom
         'node_ips': {},
         'system_ips': {},
         'all_ips': [],
+        # Dependency info for Dockerfiles
+        'apt_packages_line': apt_packages_line,
+        'extra_deps_comment': extra_deps_comment,
+        'runtime_deps': runtime_deps,
     }
     
     # Visit the plant to generate Dockerfiles for each node
