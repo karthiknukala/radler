@@ -51,8 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     && rm -rf /var/lib/apt/lists/*
 
 # Clone radler for base packages (radl_lib, pervasives)
-RUN git clone --depth 1 https://github.com/karthiknukala/radler.git /opt/radler && \\
-    cd /opt/radler && git checkout modernizing
+RUN git clone --depth 1 --branch modernizing https://github.com/karthiknukala/radler.git /opt/radler
 
 # Setup workspace with radler base packages
 WORKDIR /ros_ws
