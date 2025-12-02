@@ -44,10 +44,11 @@ DOCKERFILE_NODE_TEMPLATE = '''# Auto-generated Dockerfile for node: {node_name}
 
 FROM ros:{ros_distro}-ros-base AS builder
 
-# Install build dependencies
+# Install build dependencies and Cyclone DDS
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     python3-colcon-common-extensions \\
     git \\
+    ros-{ros_distro}-rmw-cyclonedds-cpp \\
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all source packages (already prepared by radler-build.sh)
@@ -61,16 +62,18 @@ RUN . /opt/ros/{ros_distro}/setup.sh && \\
 # Runtime stage - minimal image
 FROM ros:{ros_distro}-ros-core
 
+# Install Cyclone DDS for better Docker networking support
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    ros-{ros_distro}-rmw-cyclonedds-cpp \\
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy built packages from builder
 COPY --from=builder /ros_ws/install /opt/ros_ws/install
 
-# Copy FastDDS configuration for peer discovery
-COPY src/ros/{package_name}/docker/fastdds.xml /opt/ros_ws/fastdds.xml
-
 # Environment configuration
 ENV ROS_DOMAIN_ID={ros_domain_id}
-ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-ENV FASTRTPS_DEFAULT_PROFILES_FILE=/opt/ros_ws/fastdds.xml
+# Use Cyclone DDS - it works better with Docker networking
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Create entrypoint script
 RUN echo '#!/bin/bash\\n\\
@@ -118,8 +121,7 @@ x-radler-common: &radler-common
   restart: unless-stopped
   environment:
     - ROS_DOMAIN_ID=${{ROS_DOMAIN_ID:-{ros_domain_id}}}
-    - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    - FASTRTPS_DEFAULT_PROFILES_FILE=/opt/ros_ws/fastdds.xml
+    - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 services:
 {services}
