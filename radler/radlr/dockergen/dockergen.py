@@ -89,23 +89,22 @@ def collect_cmake_dependencies(plantinfo):
 def get_apt_packages(cmake_deps, ros_distro):
     """
     Convert cmake module names to apt package names.
-    Returns a list of apt packages to install.
+    Only returns packages that are in our known mapping.
+    Unknown packages are assumed to be custom/local and should be built from source.
     """
     apt_packages = []
-    unknown_deps = []
+    custom_deps = []
     
     for dep in cmake_deps:
         if dep in CMAKE_TO_APT_PACKAGES:
             pkg = CMAKE_TO_APT_PACKAGES[dep].format(distro=ros_distro)
             apt_packages.append(pkg)
         else:
-            # Try common ROS package naming convention
-            ros_pkg = f'ros-{ros_distro}-{dep.lower().replace("_", "-")}'
-            apt_packages.append(ros_pkg)
-            unknown_deps.append(dep)
+            # Unknown packages are likely custom - don't try to apt install them
+            custom_deps.append(dep)
     
-    if unknown_deps:
-        log1(f"Note: Unknown cmake dependencies (guessing apt names): {unknown_deps}")
+    if custom_deps:
+        log1(f"Note: Custom packages (must be in workspace): {custom_deps}")
     
     return sorted(set(apt_packages))
 
