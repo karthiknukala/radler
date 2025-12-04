@@ -335,7 +335,7 @@ def gennode_python(node):
     content = node_py_template.format(
         node_name=node._name,
         node_class_name=node_class_name,
-        module_name=nodemodule._name,
+        module_name=nodemodule.name(),
         user_path=user_path,
         user_module=user_module,
         user_class=user_class,
