@@ -130,9 +130,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
 WORKDIR /ros_ws
 COPY src/ src/
 
-# Build all packages
+# Build only required packages (the target package and its dependencies)
 RUN . /opt/ros/{ros_distro}/setup.sh && \\
-    colcon build
+    colcon build --packages-up-to {package_name}
 
 # Runtime stage - minimal image
 FROM ros:{ros_distro}-ros-core

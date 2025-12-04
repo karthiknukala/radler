@@ -84,6 +84,7 @@ include_directories(
 {inc_dir}
 )"""
 "{node_defs}"
+"{python_installs}"
 """
 
 ament_export_dependencies(rosidl_default_runtime)
@@ -156,6 +157,18 @@ ament_target_dependencies({node_target} {ament_target_dep})
 """
 }
 
+# Template for Python node installation
+python_node_templates = {
+'python_installs':
+"""
+install(PROGRAMS
+  {node_py_path}
+  DESTINATION lib/{module}
+  RENAME {node_name}
+)
+"""
+}
+
 
 def _from_node(visitor, node, d):
     nodemodule = node._qname.rootmodule()
@@ -175,6 +188,9 @@ def _from_node(visitor, node, d):
     if source_type == 'PYTHON':
         # Generate Python node (no CMake compilation needed)
         node_py_path = gennode_python(node)
+        # Add Python node installation rule
+        d['node_py_path'] = str(relative_path(node_py_path, d['_localroot']))
+        app(d, python_node_templates)
         # Python nodes don't need CMake build rules, so we skip the rest
         return
     
@@ -222,6 +238,7 @@ def gen(localroot, msg_list, msg_dir, ast, extra_files=None):
     clear(d, cmake_templates)
     clear(d, cmake_msgs_templates)
     clear(d, node_templates_cmake_sublevel)
+    clear(d, python_node_templates)
 
     visitor.visit(ast, d)
 
