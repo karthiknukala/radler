@@ -140,8 +140,9 @@ FROM ros:{ros_distro}-ros-core
 # Copy built packages from builder
 COPY --from=builder /ros_ws/install /opt/ros_ws/install
 
-# Environment configuration - use FastDDS (default)
+# Environment configuration
 ENV ROS_DOMAIN_ID={ros_domain_id}
+ENV PYTHONUNBUFFERED=1
 
 # Create entrypoint script
 RUN echo '#!/bin/bash\\n\\

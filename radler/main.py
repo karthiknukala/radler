@@ -486,8 +486,8 @@ class Talker:
         radl_out.hello.count = self.counter
         self.counter += 1
         
-        # Print for debugging
-        print(f"Sent {radl_out.hello.count}")
+        # Print for debugging (flush=True for Docker compatibility)
+        print(f"Sent {radl_out.hello.count}", flush=True)
 '''
 
         # Python listener template
@@ -522,7 +522,7 @@ class Listener:
         # Check if we have valid data (not stale or timed out)
         if not (radl_in_flags.hello & RADL_STALE) and not (radl_in_flags.hello & RADL_TIMEOUT):
             if radl_in.hello is not None:
-                print(f"Received {radl_in.hello.count}")
+                print(f"Received {radl_in.hello.count}", flush=True)
 '''
 
         # Write Python files
