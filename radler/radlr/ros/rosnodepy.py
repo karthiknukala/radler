@@ -80,10 +80,12 @@ class RadlOutFlags:
 # Flag constants (matching radl_flags.h)
 RADL_STALE_VALUE = 1
 RADL_STALE_MBOX = 2
-RADL_STALE = 3
+RADL_STALE = 3  # RADL_STALE_VALUE | RADL_STALE_MBOX
 RADL_TIMEOUT_VALUE = 16
 RADL_TIMEOUT_MBOX = 32
-RADL_TIMEOUT = 48
+RADL_TIMEOUT = 48  # RADL_TIMEOUT_VALUE | RADL_TIMEOUT_MBOX
+RADL_VALUE_FLAGS = RADL_STALE_VALUE | RADL_TIMEOUT_VALUE  # 17
+RADL_MBOX_FLAGS = RADL_STALE_MBOX | RADL_TIMEOUT_MBOX  # 34
 
 
 def radl_is_stale(flags):
@@ -94,6 +96,16 @@ def radl_is_stale(flags):
 def radl_is_timeout(flags):
     """Check if the timeout flag is set"""
     return (flags & RADL_TIMEOUT) != 0
+
+
+def radl_mbox_flags_to_value(f):
+    """Convert MBOX flags to VALUE flags for flag propagation.
+    
+    This converts STALE_MBOX (2) to STALE_VALUE (1) and 
+    TIMEOUT_MBOX (32) to TIMEOUT_VALUE (16), enabling cascade
+    detection of staleness through the node chain.
+    """
+    return (f | ((f >> 1) & RADL_VALUE_FLAGS)) & ~RADL_MBOX_FLAGS
 
 
 class {node_class_name}(Node):
@@ -266,7 +278,8 @@ def gennode_python(node):
         # Set default output flags
         set_default_out_flags.append(f"        self._out_flags.{pub_name} = gathered_flags")
         
-        # Publish output
+        # Publish output (set radl_flags from output flags before publishing)
+        publish_outputs.append(f"        self._out.{pub_name}.radl_flags = self._out_flags.{pub_name}")
         publish_outputs.append(f"        self._pub_{pub_name}.publish(self._out.{pub_name})")
     
     # Process subscriptions
@@ -276,6 +289,15 @@ def gennode_python(node):
         topic_name = qn_topic(topic._qname)
         msg_type_name = topic._ros_msgtype_name
         msg_short_name = python_msg_short_name(msg_type_name)
+        
+        # Get MAXLATENCY in seconds (stored in nanoseconds in RADL)
+        maxlatency_ns = int(sub['MAXLATENCY']._val) if sub['MAXLATENCY'] else 0
+        maxlatency_sec = maxlatency_ns / 1_000_000_000.0
+        # maxperiod is publisher period - for now use 10 seconds as default (same as C++)
+        maxperiod_sec = 10.0
+        # Compute max stale threshold: how many periods before timeout
+        # Formula matches C++: floor((maxperiod + maxlatency) / period)
+        max_stale_threshold = int((maxperiod_sec + maxlatency_sec) / period_sec) if period_sec > 0 else 100
         
         # Add message import
         msg_imports.add(python_msg_type_to_import(msg_type_name))
@@ -287,6 +309,7 @@ def gennode_python(node):
         # Create subscriber storage
         sub_storage_init.append(f"        self._latest_{sub_name} = {msg_short_name}()")
         sub_storage_init.append(f"        self._is_stale_{sub_name} = True")
+        sub_storage_init.append(f"        self._maxstale_{sub_name} = {max_stale_threshold}")
         
         # Create subscriber with callback
         callback_name = f"_callback_{sub_name}"
@@ -305,13 +328,18 @@ def gennode_python(node):
         # Initialize timeout counter
         timeout_counters_init.append(f"        self._tc_{sub_name} = 0")
         
-        # Update input flags
+        # Update input flags (matching C++ RADL__MNG_FLAGS behavior)
+        update_in_flags.append(f"        # Process {sub_name} subscription flags")
         update_in_flags.append(f"        self._in.{sub_name} = self._latest_{sub_name}")
+        update_in_flags.append(f"        # Start with message flags converted to value flags")
+        update_in_flags.append(f"        msg_flags = getattr(self._latest_{sub_name}, 'radl_flags', 0)")
+        update_in_flags.append(f"        self._in_flags.{sub_name} = radl_mbox_flags_to_value(msg_flags)")
         update_in_flags.append(f"        if self._is_stale_{sub_name}:")
         update_in_flags.append(f"            self._in_flags.{sub_name} |= RADL_STALE_MBOX")
         update_in_flags.append(f"            self._tc_{sub_name} += 1")
+        update_in_flags.append(f"            if self._tc_{sub_name} >= self._maxstale_{sub_name}:")
+        update_in_flags.append(f"                self._in_flags.{sub_name} |= RADL_TIMEOUT_MBOX")
         update_in_flags.append(f"        else:")
-        update_in_flags.append(f"            self._in_flags.{sub_name} = 0")
         update_in_flags.append(f"            self._tc_{sub_name} = 0")
         update_in_flags.append(f"            self._is_stale_{sub_name} = True  # Mark as stale for next iteration")
         update_in_flags.append(f"")
