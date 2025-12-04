@@ -46,7 +46,12 @@ import os
 {msg_imports}
 
 # Import user module
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '{module_name}', 'user_src', '{user_path}'))
+# Script is installed to: lib/{module}/{node_name}
+# User src is installed to: lib/{module}/user_src/
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_user_src_path = os.path.join(_script_dir, 'user_src', '{user_path}')
+sys.path.insert(0, _user_src_path)
+
 from {user_module} import {user_class}
 
 
