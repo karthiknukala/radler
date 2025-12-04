@@ -151,6 +151,8 @@ class {node_class_name}(Node):
         # Publish outputs
 {publish_outputs}
 
+    # Subscription callbacks
+{sub_callbacks}
 
 def main(args=None):
     rclpy.init(args=args)
@@ -234,6 +236,7 @@ def gennode_python(node):
     
     # Subscriber initialization and callbacks
     sub_init = []
+    sub_callbacks = []
     sub_storage_init = []
     timeout_counters_init = []
     update_in_flags = []
@@ -292,11 +295,12 @@ def gennode_python(node):
         sub_init.append(f"            '{topic_name}',")
         sub_init.append(f"            self.{callback_name},")
         sub_init.append(f"            qos_profile)")
-        sub_init.append(f"")
-        sub_init.append(f"    def {callback_name}(self, msg):")
-        sub_init.append(f"        self._latest_{sub_name} = msg")
-        sub_init.append(f"        self._is_stale_{sub_name} = False")
-        sub_init.append(f"")
+        
+        # Generate callback method (at class level)
+        sub_callbacks.append(f"    def {callback_name}(self, msg):")
+        sub_callbacks.append(f"        self._latest_{sub_name} = msg")
+        sub_callbacks.append(f"        self._is_stale_{sub_name} = False")
+        sub_callbacks.append(f"")
         
         # Initialize timeout counter
         timeout_counters_init.append(f"        self._tc_{sub_name} = 0")
@@ -353,6 +357,7 @@ def gennode_python(node):
         out_flags_struct_init='\n'.join(out_flags_struct_init),
         pub_init='\n'.join(pub_init),
         sub_init='\n'.join(sub_init),
+        sub_callbacks='\n'.join(sub_callbacks),
         sub_storage_init='\n'.join(sub_storage_init),
         timeout_counters_init='\n'.join(timeout_counters_init),
         update_in_flags='\n'.join(update_in_flags),
