@@ -46,8 +46,8 @@ import os
 {msg_imports}
 
 # Import user module
-# Script is installed to: lib/{module}/{node_name}
-# User src is installed to: lib/{module}/user_src/
+# Script is installed to: lib/<package>/<node_name>
+# User src is installed to: lib/<package>/user_src/
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 _user_src_path = os.path.join(_script_dir, 'user_src', '{user_path}')
 sys.path.insert(0, _user_src_path)
