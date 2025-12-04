@@ -21,7 +21,7 @@ Created on May, 2014
 @author: Léonard Gérard leonard.gerard@sri.com
 
 '''
-from collections import Mapping
+from collections.abc import Mapping
 
 from radler.astutils.names import NonExistingIdent
 from radler.astutils.nodetrees import Functor

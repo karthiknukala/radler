@@ -58,9 +58,9 @@ def clear(d, templates):
 
 cmake_templates = {
 'cmakeliststxt': """
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project({module})
@@ -127,11 +127,11 @@ node_templates_cmake_sublevel = {
 'to_install':
 " {node_target}"
 ,
-'node_defs':"""
+'node_defs':r"""
 #get_target_property({node_user_src_var} {node_module_lib} radl_user_src)
 set({node_user_src_var} ${{CMAKE_CURRENT_SOURCE_DIR}}/../../{node_module_lib}/user_src)"""
 "{node_find_libs}"
-"""
+r"""
 add_executable({node_target} {node_sources})
 set_target_properties({node_target} PROPERTIES OUTPUT_NAME {node_name})
 target_include_directories({node_target} PUBLIC {node_dirs} PRIVATE {node_gen_folder})
@@ -147,11 +147,10 @@ target_compile_definitions({node_target}
   PRIVATE RADL_FINISH_FUN={node_user_finish_fun}
 )
 target_compile_features({node_target} PUBLIC cxx_decltype_auto)
+rosidl_get_typesupport_target(cpp_typesupport_target_{node_target} {module} "rosidl_typesupport_cpp")
 target_link_libraries({node_target}
-  {target_link_libs} {node_libs}
+  {target_link_libs} {node_libs} ${{cpp_typesupport_target_{node_target}}}
 )
-rosidl_target_interfaces({node_target}
-      {module} "rosidl_typesupport_cpp")
 
 ament_target_dependencies({node_target} {ament_target_dep})
 """

@@ -22,7 +22,7 @@ Created on June, 2014
 
 '''
 
-from collections import Callable
+from collections.abc import Callable
 
 from radler.astutils.location import Location
 from radler.radlr import infos

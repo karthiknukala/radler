@@ -71,7 +71,7 @@ def gen_grammar(language_tree, env):
         """ A quoted node is a leaf.
         It stores its content in the second child of its choice child.
         """
-        return node.children[0][1], env
+        return node.children[0].children[1], env
 
     def defKind(visitor, node, env):
         """ Verify that the kind is not already defined.
@@ -170,7 +170,7 @@ def gen_grammar(language_tree, env):
         topleveldefs = ''
     lang = """_lang = _ ({tops})* _ _end""".format(tops=topleveldefs)
     log4(lambda:g+lang)
-    return Grammar(g+lang, '_lang'), env
+    return Grammar(g+lang)['_lang'], env
 
 def gen_tree_to_ast(language_tree, env):
     #We create a visitor with a visitor... so the convention here is that

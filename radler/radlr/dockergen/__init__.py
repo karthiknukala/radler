@@ -1,4 +1,3 @@
-#!/bin/bash
 # This file is part of Radler.
 #
 # Radler is free software: you can redistribute it and/or modify
@@ -14,6 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Radler.  If not, see <http://www.gnu.org/licenses/>.
 
-SCRIPT_DIR=`dirname $(python3 -c "import os, sys; print(os.path.realpath(\"$0\"))")`
+'''
+Docker generation module for Radler.
 
-PYTHONPATH="$SCRIPT_DIR/external_libs/parsimonious:$SCRIPT_DIR/external_libs/pydot:$SCRIPT_DIR" python3 $SCRIPT_DIR/radler/main.py "$@"
+This module generates Dockerfiles and docker-compose.yml for deploying
+Radler-generated ROS packages as containers.
+
+@license: GPLv3
+Created on Dec, 2024
+'''
+
+from radler.radlr.dockergen.dockergen import do_pass
+
