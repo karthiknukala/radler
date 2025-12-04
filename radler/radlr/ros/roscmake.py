@@ -29,7 +29,7 @@ from pathlib import Path
 from radler.astutils.tools import write_file, listjoin, relative_path
 from radler.radlr import infos
 from radler.radlr.gen_utils import qn
-from radler.radlr.gen_utils.user_sources import gather_node_user_file, node_sources_type
+from radler.radlr.gen_utils.user_sources import gather_node_user_file, node_sources_type, collect_pip_packages
 from radler.radlr.rast import AstVisitor, follow_links
 from radler.radlr.ros.rosnode import gennode
 from radler.radlr.ros.rosnodepy import gennode_python
@@ -193,6 +193,14 @@ def _from_node(visitor, node, d):
 
     # Check if this is a Python node
     source_type = node_sources_type(node)
+    
+    # Collect pip packages from Python nodes
+    pip_pkgs = collect_pip_packages(node)
+    if pip_pkgs:
+        if '_pip_packages' not in d:
+            d['_pip_packages'] = set()
+        d['_pip_packages'].update(pip_pkgs)
+    
     if source_type == 'PYTHON':
         # Generate Python node (no CMake compilation needed)
         node_py_path = gennode_python(node)
@@ -304,5 +312,14 @@ def gen(localroot, msg_list, msg_dir, ast, extra_files=None):
     app(d, cmake_templates)
 
     write_file(localroot / "CMakeLists.txt", d['cmakeliststxt'])
+    
+    # Generate requirements.txt if there are pip packages
+    if d.get('_pip_packages'):
+        pip_packages = sorted(d['_pip_packages'])
+        requirements_content = "# Auto-generated requirements.txt for Radler Python nodes\n"
+        requirements_content += f"# Generated from: {infos.source_file}\n"
+        requirements_content += "# Install with: pip install -r requirements.txt\n\n"
+        requirements_content += '\n'.join(pip_packages) + '\n'
+        write_file(localroot / "requirements.txt", requirements_content)
 
 

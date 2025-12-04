@@ -126,6 +126,51 @@ def gather_user_header_paths(node, src_path=user_src_path):
 
 
 
+def collect_pip_packages(node):
+    """Collect pip package dependencies from a Python node.
+    
+    Returns a list of pip package specs (e.g., ["numpy>=2.0", "pandas"]).
+    Returns empty list if node is not a Python node or has no LIB dependencies.
+    """
+    source_type = node_sources_type(node)
+    if source_type != 'PYTHON':
+        return []
+    
+    source = node['PYTHON']
+    pip_packages = []
+    
+    # Check if LIB field exists and has pip_package entries
+    if source['LIB']:
+        for lib in source['LIB']:
+            if hasattr(lib, '_kind') and lib._kind == 'pip_package':
+                pkg_name = lib['PACKAGE']._val
+                version = lib['VERSION']._val if lib['VERSION'] else None
+                extras = lib['EXTRAS']._val if lib['EXTRAS'] else None
+                
+                # Build the pip package specifier
+                pkg_spec = pkg_name
+                if extras:
+                    pkg_spec += extras  # e.g., "package[extra1,extra2]"
+                if version:
+                    pkg_spec += version  # e.g., "package>=2.0"
+                
+                pip_packages.append(pkg_spec)
+    
+    return pip_packages
+
+
+def collect_all_pip_packages(nodes):
+    """Collect all pip package dependencies from a list of nodes.
+    
+    Returns a sorted, deduplicated list of pip package specs.
+    """
+    all_packages = set()
+    for node in nodes:
+        for pkg in collect_pip_packages(node):
+            all_packages.add(pkg)
+    return sorted(all_packages)
+
+
 def user_node_class(node, state_var, in_var, in_f_var, out_var, out_f_var):
     """ The node is searched for a C, CXX, or PYTHON class defining the step machine.
     This returns the instructions to initialize the state_var, the

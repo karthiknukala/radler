@@ -9,11 +9,16 @@ chatter_data : topic {
         data : int64 0
 }
 
+# Example pip package declarations (optional - uncomment to use)
+# numpy_pkg : pip_package { PACKAGE "numpy" VERSION ">=1.20" }
+# requests_pkg : pip_package { PACKAGE "requests" }
+
 talker : node {
     PUBLISHES
         chatter { TOPIC chatter_data }
     PERIOD basic_rate
     PYTHON { FILENAME "talker.py" MODULE "talker" CLASS "Talker" }
+    # To add pip dependencies, add: LIB numpy_pkg requests_pkg
 }
 
 listener : node {

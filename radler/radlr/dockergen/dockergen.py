@@ -31,6 +31,7 @@ from radler.astutils.tools import write_file, ensure_dir
 from radler.radlr import infos
 from radler.radlr.errors import log1
 from radler.radlr.rast import AstVisitor, follow_links
+from radler.radlr.gen_utils.user_sources import collect_all_pip_packages
 
 
 # Mapping from CMAKE_MODULE names to ROS2 apt packages
@@ -123,9 +124,10 @@ FROM ros:{ros_distro}-ros-base AS builder
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \\
     python3-colcon-common-extensions \\
+    python3-pip \\
     git{apt_packages_line} \\
     && rm -rf /var/lib/apt/lists/*
-
+{pip_install_build}
 # Copy all source packages (already prepared by radler-build.sh)
 WORKDIR /ros_ws
 COPY src/ src/
@@ -137,6 +139,11 @@ RUN . /opt/ros/{ros_distro}/setup.sh && \\
 # Runtime stage - minimal image
 FROM ros:{ros_distro}-ros-core
 {runtime_deps}
+# Install Python pip for runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    python3-pip \\
+    && rm -rf /var/lib/apt/lists/*
+{pip_install_runtime}
 # Copy built packages from builder
 COPY --from=builder /ros_ws/install /opt/ros_ws/install
 
@@ -331,6 +338,11 @@ def do_pass(plantinfo, package_name, package_folder, ros_distro='jazzy', ros_dom
         log1(f"Detected cmake dependencies: {cmake_deps}")
         log1(f"Apt packages to install: {apt_packages}")
     
+    # Collect pip package dependencies from Python nodes
+    pip_packages = collect_all_pip_packages(plantinfo.nodes)
+    if pip_packages:
+        log1(f"Detected pip packages: {pip_packages}")
+    
     # Format apt package install lines for Dockerfile
     if apt_packages:
         apt_packages_line = ' \\\n    ' + ' \\\n    '.join(apt_packages)
@@ -351,6 +363,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
         extra_deps_comment = ''
         runtime_deps = ''
     
+    # Format pip install lines for Dockerfile
+    if pip_packages:
+        pip_install_line = ' '.join(f'"{pkg}"' for pkg in pip_packages)
+        pip_install_build = f'''
+# Install Python dependencies (from RADL pip_package declarations)
+RUN pip3 install --break-system-packages {pip_install_line}
+'''
+        pip_install_runtime = f'''
+# Install Python dependencies (from RADL pip_package declarations)
+RUN pip3 install --break-system-packages {pip_install_line}
+'''
+    else:
+        pip_install_build = ''
+        pip_install_runtime = ''
+    
     d = {
         'package_name': package_name,
         'package_folder': package_folder,
@@ -370,6 +397,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
         'apt_packages_line': apt_packages_line,
         'extra_deps_comment': extra_deps_comment,
         'runtime_deps': runtime_deps,
+        # Pip package info for Dockerfiles
+        'pip_install_build': pip_install_build,
+        'pip_install_runtime': pip_install_runtime,
     }
     
     # Visit the plant to generate Dockerfiles for each node
@@ -415,9 +445,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \\
     instructions_path = docker_folder / 'RUN_INSTRUCTIONS.txt'
     write_file(instructions_path, instructions)
     
+    # Generate requirements.txt if there are pip packages
+    generated_files = d['dockerfiles'] + ['docker-compose.yml', 'fastdds.xml', 'README.md', 'RUN_INSTRUCTIONS.txt']
+    if pip_packages:
+        requirements_content = "# Auto-generated requirements.txt for Radler Python nodes\n"
+        requirements_content += f"# Generated from: {d['source_file']}\n"
+        requirements_content += "# Install with: pip install -r requirements.txt\n\n"
+        requirements_content += '\n'.join(pip_packages) + '\n'
+        requirements_path = docker_folder / 'requirements.txt'
+        write_file(requirements_path, requirements_content)
+        generated_files.append('requirements.txt')
+        log1(f"Generated requirements.txt with {len(pip_packages)} packages")
+    
     log1(f"Generated Docker artifacts in: {docker_folder}")
     
-    return d['dockerfiles'] + ['docker-compose.yml', 'fastdds.xml', 'README.md', 'RUN_INSTRUCTIONS.txt']
+    return generated_files
 
 
 def generate_run_instructions(d, network_subnet):

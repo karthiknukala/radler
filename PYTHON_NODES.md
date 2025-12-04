@@ -38,6 +38,100 @@ my_node : node {
 - **CLASS** (required): The name of the Python class to instantiate
 - **STEP_METHOD** (optional): The name of the step method (defaults to "step")
 - **PATH** (optional): Subdirectory path relative to user_src (defaults to ".")
+- **LIB** (optional): List of pip package dependencies (see below)
+
+## Python Package Dependencies (pip_package)
+
+You can declare pip package dependencies directly in your RADL file, similar to how `cmake_library` works for C++ nodes. This ensures your Python dependencies are automatically installed in Docker builds and documented in generated `requirements.txt` files.
+
+### Defining pip_package
+
+```radl
+# Define pip packages as named entities
+numpy_pkg : pip_package { PACKAGE "numpy" }
+pandas_pkg : pip_package { PACKAGE "pandas" VERSION ">=2.0" }
+opencv_pkg : pip_package { PACKAGE "opencv-python" VERSION ">=4.8" }
+torch_pkg : pip_package { PACKAGE "torch" EXTRAS "[cpu]" }
+
+# Reference them in your Python node
+my_node : node {
+    PERIOD 100msec
+    PYTHON { 
+        FILENAME "my_node.py" 
+        MODULE "my_node" 
+        CLASS "MyNode"
+        LIB numpy_pkg pandas_pkg opencv_pkg
+    }
+}
+```
+
+### pip_package Fields
+
+- **PACKAGE** (required): The pip package name (e.g., "numpy", "opencv-python")
+- **VERSION** (optional): Version specifier (e.g., ">=2.0", "==1.5.0", "~=3.0")
+- **EXTRAS** (optional): Package extras (e.g., "[dev]", "[full,async]")
+
+### Generated Files
+
+When you use `pip_package`, Radler automatically:
+
+1. **Generates `requirements.txt`** in the ROS package folder for local development:
+   ```
+   # Install locally
+   pip install -r src/ros/<package>/requirements.txt
+   ```
+
+2. **Adds `pip install` commands** to generated Dockerfiles for containerized deployments
+
+3. **Logs detected pip packages** during compilation for transparency
+
+### Example with Dependencies
+
+```radl
+settings : module_settings {
+    MODULE_BASE_PATH "src"
+}
+
+# Pip package definitions
+numpy_dep : pip_package { PACKAGE "numpy" VERSION ">=1.20" }
+scipy_dep : pip_package { PACKAGE "scipy" }
+matplotlib_dep : pip_package { PACKAGE "matplotlib" VERSION ">=3.5" }
+
+sensor_data : topic {
+    FIELDS
+        values : array { TYPE float64 SIZE 100 }
+}
+
+# Python node with dependencies
+analyzer : node {
+    SUBSCRIBES
+        sensor { TOPIC sensor_data MAXLATENCY 50msec }
+    PERIOD 100msec
+    PYTHON { 
+        FILENAME "analyzer.py" 
+        MODULE "analyzer" 
+        CLASS "DataAnalyzer"
+        LIB numpy_dep scipy_dep matplotlib_dep
+    }
+}
+```
+
+Then in `src/analyzer.py`:
+```python
+import numpy as np
+from scipy import signal
+import matplotlib.pyplot as plt
+
+class DataAnalyzer:
+    def __init__(self):
+        self.filter = signal.butter(4, 0.1, 'low')
+    
+    def step(self, radl_in, radl_in_flags, radl_out, radl_out_flags):
+        if radl_in.sensor is not None:
+            data = np.array(radl_in.sensor.values)
+            filtered = signal.filtfilt(*self.filter, data)
+            # Process filtered data...
+```
 
 ## Writing a Python Step Function
 

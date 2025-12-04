@@ -123,6 +123,7 @@ class python_class
     MODULE string
     CLASS string
     STEP_METHOD string ?
+    LIB pip_package *
 
 class c_class
     PATH string ?
@@ -140,6 +141,11 @@ class cmake_library
     CMAKE_COMPONENTS string *
     CMAKE_VAR_LIBRARIES string ?     #defaults to {CMAKE_MODULE}_LIBRARIES
     CMAKE_VAR_INCLUDE_DIRS string ?  #defaults to {CMAKE_MODULE}_INCLUDE_DIRS
+
+class pip_package
+    PACKAGE string                   #the pip package name (e.g., "numpy", "opencv-python")
+    VERSION string ?                 #optional version specifier (e.g., ">=2.0", "==1.5.0")
+    EXTRAS string ?                  #optional extras (e.g., "[dev]", "[full]")
 
 class static_library
     PATH string ?
