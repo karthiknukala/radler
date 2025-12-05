@@ -158,21 +158,15 @@ ament_target_dependencies({node_target} {ament_target_dep})
 }
 
 # Template for Python node installation
+# User code is embedded directly in the generated wrapper, so no user_src install needed
 python_node_templates = {
 'python_installs':
 """
-# Install Python node wrapper script
+# Install Python node wrapper script (user code is embedded)
 install(PROGRAMS
   {node_py_path}
   DESTINATION lib/{module}
   RENAME {node_name}
-)
-
-# Install user Python source files for this node
-install(DIRECTORY
-  ../../{node_module_lib}/user_src/
-  DESTINATION lib/{module}/user_src
-  FILES_MATCHING PATTERN "*.py"
 )
 """
 }

@@ -45,14 +45,13 @@ import os
 # Import ROS2 message types
 {msg_imports}
 
-# Import user module
-# Script is installed to: lib/<package>/<node_name>
-# User src is installed to: lib/<package>/user_src/
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-_user_src_path = os.path.join(_script_dir, 'user_src', '{user_path}')
-sys.path.insert(0, _user_src_path)
-
-from {user_module} import {user_class}
+# =============================================================================
+# User code (embedded from {user_filename})
+# =============================================================================
+{user_code}
+# =============================================================================
+# End of user code
+# =============================================================================
 
 
 # Helper classes for input/output structures
@@ -226,6 +225,17 @@ def gennode_python(node):
     user_class = source['CLASS']._val
     step_method = source['STEP_METHOD']._val if source['STEP_METHOD'] else 'step'
     user_path = source['PATH']._val if source['PATH'] else '.'
+    user_filename = source['FILENAME']._val
+    
+    # Read user's Python source file and embed it
+    user_file_path = infos.module_base_path / user_path / user_filename
+    try:
+        with open(user_file_path, 'r') as f:
+            user_code = f.read()
+    except FileNotFoundError:
+        from radler.radlr.errors import error
+        error(f"User Python file not found: {user_file_path}", node._location)
+        user_code = f"# ERROR: Could not read {user_file_path}\nclass {user_class}:\n    def __init__(self): pass\n    def step(self, *args): pass\n"
     
     # Compute period in seconds
     period_ns = int(node['PERIOD']._val)
@@ -373,8 +383,8 @@ def gennode_python(node):
         node_name=node._name,
         node_class_name=node_class_name,
         module_name=nodemodule.name(),
-        user_path=user_path,
-        user_module=user_module,
+        user_filename=user_filename,
+        user_code=user_code,
         user_class=user_class,
         step_method=step_method,
         period=period_sec,

@@ -1,0 +1,81 @@
+# Radler example: Numpy/Scipy Series Calculator
+# Demonstrates pip_package usage for Python dependencies
+#
+# This example shows a talker generating successive Chebyshev polynomial
+# values and a listener that computes statistics using scipy.
+#
+# Build with:
+#   ./radler.sh compile examples/pubsub/numpy_series/numpy_series.radl --plant plant --ROS
+#
+# Or with Docker (automatically installs numpy/scipy):
+#   docker run -v $(pwd):/project -v /tmp/ros_ws:/output radler/builder \
+#       /project/examples/pubsub/numpy_series/numpy_series.radl --plant plant --docker
+
+settings : module_settings {
+    MODULE_BASE_PATH "src"
+}
+
+# Pip package declarations
+numpy_pkg : pip_package { PACKAGE "numpy" VERSION ">=1.20" }
+scipy_pkg : pip_package { PACKAGE "scipy" VERSION ">=1.7" }
+
+# Topic for series data
+series_data : topic {
+    FIELDS
+        index : int64 0           # Current index in the series
+        value : float64 0.0       # Computed value at this index
+        x_point : float64 0.0     # X coordinate used for calculation
+}
+
+# Topic for computed statistics
+stats_data : topic {
+    FIELDS
+        count : int64 0           # Number of samples received
+        mean : float64 0.0        # Running mean
+        std_dev : float64 0.0     # Standard deviation
+        max_val : float64 0.0     # Maximum value seen
+        min_val : float64 0.0     # Minimum value seen
+}
+
+basic_rate : duration 200msec
+
+# Series generator node - computes Chebyshev polynomial values
+series_generator : node {
+    PUBLISHES
+        series { TOPIC series_data }
+    PERIOD basic_rate
+    PYTHON { 
+        FILENAME "series_generator.py" 
+        MODULE "series_generator" 
+        CLASS "SeriesGenerator"
+        LIB numpy_pkg scipy_pkg
+    }
+}
+
+# Statistics processor node - analyzes incoming series values
+stats_processor : node {
+    SUBSCRIBES
+        series { TOPIC series_data MAXLATENCY 100msec }
+    PUBLISHES
+        stats { TOPIC stats_data }
+    PERIOD basic_rate
+    PYTHON { 
+        FILENAME "stats_processor.py" 
+        MODULE "stats_processor" 
+        CLASS "StatsProcessor"
+        LIB numpy_pkg scipy_pkg
+    }
+}
+
+sys1 : linux {
+    NODES_UID 1000
+    IP 192.168.10.201
+    NODES
+        series_generator stats_processor
+}
+
+plant : plant {
+    MACHINES
+        host_computer { OS sys1 }
+}
+
