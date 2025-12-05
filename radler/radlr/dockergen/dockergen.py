@@ -262,6 +262,8 @@ def node(visitor, n, d):
         'apt_packages_line': d.get('apt_packages_line', ''),
         'extra_deps_comment': d.get('extra_deps_comment', ''),
         'runtime_deps': d.get('runtime_deps', ''),
+        'pip_install_build': d.get('pip_install_build', ''),
+        'pip_install_runtime': d.get('pip_install_runtime', ''),
     }
     
     # Generate the Dockerfile for this node
