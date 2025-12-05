@@ -81,7 +81,8 @@ class StatsProcessor:
         # Print detailed stats periodically (every 50 samples)
         if self.count % 50 == 0:
             # Use scipy for additional statistics
-            if len(window) > 2:
+            # Only compute if there's enough variance (avoid divide-by-zero warnings)
+            if len(window) > 2 and std_dev > 1e-10:
                 skewness = scipy_stats.skew(window)
                 kurtosis = scipy_stats.kurtosis(window)
             else:
