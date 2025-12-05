@@ -1,0 +1,77 @@
+# Radler example: Mixed Language (Python + C++)
+# Demonstrates interoperability between Python and C++ nodes
+#
+# - Python node publishes sensor readings with numpy processing
+# - C++ node subscribes and processes the data
+#
+# Build with:
+#   docker run -v $(pwd):/project -v $(pwd):/opt/radler -v /tmp/ros_ws:/output \
+#       radler/builder /project/examples/pubsub/mixed_lang/mixed_lang.radl \
+#       --plant plant --docker --build
+
+settings : module_settings {
+    MODULE_BASE_PATH "src"
+}
+
+# Pip packages for the Python node
+numpy_pkg : pip_package { PACKAGE "numpy" }
+
+# Topic for sensor data (radl_flags is auto-added by radler)
+sensor_reading : topic {
+    FIELDS
+        timestamp : int64 0       # Timestamp in nanoseconds
+        temperature : float64 0.0 # Temperature in Celsius
+        pressure : float64 0.0    # Pressure in hPa
+        humidity : float64 0.0    # Relative humidity %
+}
+
+# Topic for processed alerts
+alert_msg : topic {
+    FIELDS
+        alert_type : int32 0      # 0=none, 1=temp, 2=pressure, 3=humidity
+        message : int64 0         # Alert code
+        severity : int32 0        # 0=info, 1=warning, 2=critical
+}
+
+sensor_rate : duration 500msec
+processor_rate : duration 100msec
+
+# Python node: Simulates sensor readings with numpy
+sensor_simulator : node {
+    PUBLISHES
+        reading { TOPIC sensor_reading }
+    PERIOD sensor_rate
+    PYTHON { 
+        FILENAME "sensor_simulator.py" 
+        MODULE "sensor_simulator" 
+        CLASS "SensorSimulator"
+        LIB numpy_pkg
+    }
+}
+
+# C++ node: Processes sensor data and generates alerts
+alert_processor : node {
+    SUBSCRIBES
+        sensor { TOPIC sensor_reading MAXLATENCY 200msec }
+    PUBLISHES
+        alert { TOPIC alert_msg }
+    PERIOD processor_rate
+    CXX { 
+        HEADER "alert_processor.h" 
+        FILENAME "alert_processor.cpp" 
+        CLASS "AlertProcessor" 
+    }
+}
+
+sys1 : linux {
+    NODES_UID 1000
+    IP 192.168.10.201
+    NODES
+        sensor_simulator alert_processor
+}
+
+plant : plant {
+    MACHINES
+        host_computer { OS sys1 }
+}
+

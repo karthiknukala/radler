@@ -176,18 +176,33 @@ if [[ "$GENERATE_DOCKER" == true ]]; then
     find . -type l -delete 2>/dev/null || true
     
     # Copy user source files into the user's radlast package
-    # The user sources are at /project/src (mounted by the user)
-    if [[ -d "/project/src" ]]; then
+    # The source path is relative to the .radl file (MODULE_BASE_PATH is typically "src")
+    RADL_FILE_DIR=$(dirname "$RADL_FILE")
+    USER_SRC_PATH="$RADL_FILE_DIR/src"
+    
+    echo -e "${GREEN}Looking for user sources at: $USER_SRC_PATH${NC}"
+    
+    if [[ -d "$USER_SRC_PATH" ]]; then
+        echo -e "${GREEN}Found user sources. Contents:${NC}"
+        ls -la "$USER_SRC_PATH"
+        
         for pkg in radlast_*; do
             # Skip radlast_4_radl (pervasives) - only copy to user packages
             if [[ "$pkg" == "radlast_4_radl" ]]; then
                 continue
             fi
             if [[ -d "$pkg" ]]; then
+                echo -e "${GREEN}Copying to $pkg/user_src/${NC}"
                 rm -rf "$pkg/user_src" 2>/dev/null || true
-                cp -r /project/src "$pkg/user_src"
+                cp -r "$USER_SRC_PATH" "$pkg/user_src"
+                echo -e "  Contents after copy:"
+                ls -la "$pkg/user_src/" 2>/dev/null || echo "  (empty or not found)"
             fi
         done
+    else
+        echo -e "${YELLOW}Warning: User source directory not found: $USER_SRC_PATH${NC}"
+        echo -e "${YELLOW}RADL_FILE was: $RADL_FILE${NC}"
+        echo -e "${YELLOW}RADL_FILE_DIR was: $RADL_FILE_DIR${NC}"
     fi
     
     echo -e "${GREEN}All files copied - ready for Docker build${NC}"
